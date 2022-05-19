@@ -1,4 +1,4 @@
-use bounce::vec3::Vec3;
+use bounce::vec3::Color;
 
 fn main() {
     let img_width = 256;
@@ -12,15 +12,13 @@ fn main() {
         eprintln!("{} lines remaining", j);
 
         for i in 0..img_width {
-            let r = i as f32 / (img_width - 1) as f32;
-            let g = j as f32 / (img_height - 1) as f32;
-            let b = 0.25;
+            let c = Color::new(
+                i as f64 / (img_width - 1) as f64,
+                j as f64 / (img_height - 1) as f64,
+                0.25,
+            );
 
-            let ir = (255.99 * r) as i32;
-            let ig = (255.99 * g) as i32;
-            let ib = (255.99 * b) as i32;
-
-            println!("{} {} {}", ir, ig, ib);
+            println!("{}", c);
         }
     }
 
