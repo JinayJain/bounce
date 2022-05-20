@@ -2,14 +2,29 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssi
 
 #[derive(Debug, Copy, Clone)]
 pub struct Vec3<T> {
-    pub x: T,
-    pub y: T,
-    pub z: T,
+    x: T,
+    y: T,
+    z: T,
 }
 
-impl<T> Vec3<T> {
+impl<T> Vec3<T>
+where
+    T: Copy,
+{
     pub fn new(x: T, y: T, z: T) -> Vec3<T> {
         Vec3 { x, y, z }
+    }
+
+    pub fn x(&self) -> T {
+        self.x
+    }
+
+    pub fn y(&self) -> T {
+        self.y
+    }
+
+    pub fn z(&self) -> T {
+        self.z
     }
 }
 
@@ -89,6 +104,21 @@ where
     }
 }
 
+impl<T> Mul<T> for Vec3<T>
+where
+    T: Mul<Output = T> + Copy,
+{
+    type Output = Self;
+
+    fn mul(self, other: T) -> Self {
+        Vec3 {
+            x: self.x * other,
+            y: self.y * other,
+            z: self.z * other,
+        }
+    }
+}
+
 impl<T> MulAssign for Vec3<T>
 where
     T: MulAssign,
@@ -111,6 +141,21 @@ where
             x: self.x / other.x,
             y: self.y / other.y,
             z: self.z / other.z,
+        }
+    }
+}
+
+impl<T> Div<T> for Vec3<T>
+where
+    T: Div<Output = T> + Copy,
+{
+    type Output = Self;
+
+    fn div(self, other: T) -> Self {
+        Vec3 {
+            x: self.x / other,
+            y: self.y / other,
+            z: self.z / other,
         }
     }
 }

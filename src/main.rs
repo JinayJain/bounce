@@ -1,10 +1,7 @@
 use bounce::color::Color;
 
 fn main() {
-    // output_test_image();
-
-    let c1 = Color::new(1.0, 0.2, 0.4);
-    let c2 = Color::new(0.9, 1.0, 0.1);
+    output_test_image();
 }
 
 fn output_test_image() {
@@ -24,8 +21,6 @@ fn output_test_image() {
                 j as f64 / (img_height - 1) as f64,
                 0.25,
             );
-
-            let blend = Color::new(0.5, 0.7, 1.0);
 
             println!("{}", c);
         }

@@ -14,9 +14,9 @@ impl_math!(Color);
 
 impl fmt::Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let r = (self.0.x * 255.99) as u8;
-        let g = (self.0.y * 255.99) as u8;
-        let b = (self.0.z * 255.99) as u8;
+        let r = (self.0.x() * 255.99) as u8;
+        let g = (self.0.y() * 255.99) as u8;
+        let b = (self.0.z() * 255.99) as u8;
 
         write!(f, "{} {} {}", r, g, b)
     }
