@@ -1,23 +1,36 @@
-use crate::{geo::Vec3, impl_math};
-use core::fmt;
+use std::fmt::Display;
 
-#[derive(Clone, Copy, Debug)]
+use crate::{geometry::Vec3, impl_math};
+
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Color(Vec3<f64>);
 
 impl Color {
     pub fn new(r: f64, g: f64, b: f64) -> Color {
         Color(Vec3::new(r, g, b))
     }
+
+    pub fn r(&self) -> f64 {
+        self.0.x()
+    }
+
+    pub fn g(&self) -> f64 {
+        self.0.y()
+    }
+
+    pub fn b(&self) -> f64 {
+        self.0.z()
+    }
 }
 
-impl_math!(Color);
-
-impl fmt::Display for Color {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let r = (self.0.x() * 255.99) as u8;
-        let g = (self.0.y() * 255.99) as u8;
-        let b = (self.0.z() * 255.99) as u8;
+impl Display for Color {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let r = (self.r() * 255.99) as u8;
+        let g = (self.g() * 255.99) as u8;
+        let b = (self.b() * 255.99) as u8;
 
         write!(f, "{} {} {}", r, g, b)
     }
 }
+
+impl_math!(Color);
