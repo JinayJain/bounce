@@ -1,11 +1,11 @@
 #[macro_export]
-macro_rules! impl_math {
-    ($new: ty, $generic: tt) => {
+macro_rules! impl_math_generic {
+    ($new: ty) => {
         use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-        impl<$generic> Add for $new
+        impl<T> Add for $new
         where
-            $generic: Add<Output = $generic>,
+            T: Add<Output = T>,
         {
             type Output = Self;
 
@@ -14,18 +14,18 @@ macro_rules! impl_math {
             }
         }
 
-        impl<$generic> AddAssign for $new
+        impl<T> AddAssign for $new
         where
-            $generic: AddAssign,
+            T: AddAssign,
         {
             fn add_assign(&mut self, other: Self) {
                 self.0 += other.0;
             }
         }
 
-        impl<$generic> Div for $new
+        impl<T> Div for $new
         where
-            $generic: Div<Output = $generic>,
+            T: Div<Output = T>,
         {
             type Output = Self;
 
@@ -34,18 +34,29 @@ macro_rules! impl_math {
             }
         }
 
-        impl<$generic> DivAssign for $new
+        impl<T> Div<T> for $new
         where
-            $generic: DivAssign,
+            T: Div<Output = T> + Copy,
+        {
+            type Output = Self;
+
+            fn div(self, other: T) -> Self {
+                Self(self.0 / other)
+            }
+        }
+
+        impl<T> DivAssign for $new
+        where
+            T: DivAssign,
         {
             fn div_assign(&mut self, other: Self) {
                 self.0 /= other.0;
             }
         }
 
-        impl<$generic> Mul for $new
+        impl<T> Mul for $new
         where
-            $generic: Mul<Output = $generic>,
+            T: Mul<Output = T>,
         {
             type Output = Self;
 
@@ -54,18 +65,29 @@ macro_rules! impl_math {
             }
         }
 
-        impl<$generic> MulAssign for $new
+        impl<T> Mul<T> for $new
         where
-            $generic: MulAssign,
+            T: Mul<Output = T> + Copy,
+        {
+            type Output = Self;
+
+            fn mul(self, other: T) -> Self {
+                Self(self.0 * other)
+            }
+        }
+
+        impl<T> MulAssign for $new
+        where
+            T: MulAssign,
         {
             fn mul_assign(&mut self, other: Self) {
                 self.0 *= other.0;
             }
         }
 
-        impl<$generic> Neg for $new
+        impl<T> Neg for $new
         where
-            $generic: Neg<Output = $generic>,
+            T: Neg<Output = T>,
         {
             type Output = Self;
 
@@ -74,9 +96,9 @@ macro_rules! impl_math {
             }
         }
 
-        impl<$generic> Sub for $new
+        impl<T> Sub for $new
         where
-            $generic: Sub<Output = $generic>,
+            T: Sub<Output = T>,
         {
             type Output = Self;
 
@@ -85,16 +107,19 @@ macro_rules! impl_math {
             }
         }
 
-        impl<$generic> SubAssign for $new
+        impl<T> SubAssign for $new
         where
-            $generic: SubAssign,
+            T: SubAssign,
         {
             fn sub_assign(&mut self, other: Self) {
                 self.0 -= other.0;
             }
         }
     };
+}
 
+#[macro_export]
+macro_rules! impl_math {
     ($new: ty) => {
         use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 

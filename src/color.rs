@@ -23,6 +23,22 @@ impl Color {
     }
 }
 
+impl Mul<f64> for Color {
+    type Output = Self;
+
+    fn mul(self, other: f64) -> Self {
+        Color(self.0 * other)
+    }
+}
+
+impl Mul<Color> for f64 {
+    type Output = Color;
+
+    fn mul(self, other: Color) -> Self::Output {
+        other * self
+    }
+}
+
 impl Display for Color {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let r = (self.r() * 255.99) as u8;

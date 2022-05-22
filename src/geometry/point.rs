@@ -1,11 +1,11 @@
-use crate::impl_math;
+use crate::{impl_math, impl_math_generic};
 
 use super::Vec3;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Point<T>(Vec3<T>);
 
-impl_math!(Point<T>, T);
+impl_math_generic!(Point<T>);
 
 impl<T> Point<T>
 where
