@@ -4,11 +4,9 @@ use bounce::{
 };
 
 fn ray_color(r: Ray) -> Color {
-
     let sphere_center = Point::new(0.0, 0.0, -1.0);
-    let t = hit_sphere(sphere_center, 0.5, r);
 
-    if t > 0.0 {
+    if let Some(t) = hit_sphere(sphere_center, 0.5, r) {
         // compute normal vector from sphere center to hit location
         let normal: Vec3<f64> = (r.at(t) - sphere_center).into();
         let normal = normal.unit();
@@ -23,7 +21,7 @@ fn ray_color(r: Ray) -> Color {
 }
 
 /// Checks whether a given ray will hit the a sphere of a given radius and center
-fn hit_sphere(center: Point<Double>, radius: Double, r: Ray) -> f64 {
+fn hit_sphere(center: Point<Double>, radius: Double, r: Ray) -> Option<f64> {
     // t^2 b . b + 2tb . (A - C) + (A - C) . (A - C) - r^2 = 0
     // A = origin
     // b = direction
@@ -44,10 +42,10 @@ fn hit_sphere(center: Point<Double>, radius: Double, r: Ray) -> f64 {
 
     if discriminant < 0.0 {
         // unable to find a hit
-        -1.0
+        None
     } else {
         // return the full solution to the quadratic
-        (-half_b - discriminant.sqrt()) / a
+        Some((-half_b - discriminant.sqrt()) / a)
     }
 }
 
