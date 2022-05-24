@@ -1,4 +1,4 @@
-use crate::{impl_math, impl_math_generic};
+use crate::impl_math_generic;
 
 use super::Vec3;
 
