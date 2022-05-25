@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use crate::geometry::{Point, Ray, Vec3};
 
-use super::{HitRecord, Hittable};
+use super::{Hit, HitRecord};
 
 pub struct Sphere {
     center: Point<f64>,
@@ -15,7 +15,7 @@ impl Sphere {
     }
 }
 
-impl Hittable for Sphere {
+impl Hit for Sphere {
     fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord> {
         let direction = r.direction();
         let ray_origin = r.origin();

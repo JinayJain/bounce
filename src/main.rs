@@ -1,8 +1,11 @@
+use std::{io, rc::Rc};
+
 use bounce::{
     camera::Camera,
     color::Color,
-    geometry::{Point, Ray, Vec3},
-    object::{Hittable, HittableList, Sphere},
+    geometry::{Point, Ray},
+    image::Image,
+    object::{Hit, HittableList, Sphere},
 };
 
 fn ray_color(r: Ray, world: &HittableList) -> Color {
@@ -21,49 +24,46 @@ fn ray_color(r: Ray, world: &HittableList) -> Color {
     Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
 }
 
-fn main() {
+fn main() -> io::Result<()> {
     // World
     let mut world = HittableList::new();
-    world.add(Box::new(Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5)));
-    world.add(Box::new(Sphere::new(Point::new(0.0, -100.5, -1.0), 100.0)));
+    world.add(Rc::new(Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5)));
+    world.add(Rc::new(Sphere::new(Point::new(0.0, -100.5, -1.0), 100.0)));
 
     // Image
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width = 400;
-    let image_height = (image_width as f64 / aspect_ratio) as u32;
+    let background_color = Color::new(0.0, 0.0, 0.0);
+    let mut image = Image::new(400, 400, background_color);
     let samples_per_pixel = 100;
 
     // Camera
+
+    // TODO: Camera and image aspect ratio should match
     let camera = Camera::default();
 
-    // Required metadata at the beginning of PPM files
-    println!("P3");
-    println!("{} {}", image_width, image_height);
-    println!("255");
+    let width = image.width();
+    let height = image.height();
+    for (x, y, pixel) in image.pixels() {
+        let mut pixel_color = Color::new(0.0, 0.0, 0.0);
 
-    for j in (0..image_height).rev() {
-        for i in 0..image_width {
-            let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+        for _ in 0..samples_per_pixel {
+            let u = (x as f64 + rand::random::<f64>()) / (width - 1) as f64;
+            let v = (y as f64 + rand::random::<f64>()) / (height - 1) as f64;
 
-            for _ in 0..samples_per_pixel {
-                let u = (i as f64 + rand::random::<f64>()) / (image_width - 1) as f64;
-                let v = (j as f64 + rand::random::<f64>()) / (image_height - 1) as f64;
+            let r = camera.ray_at(u, v);
 
-                let r = camera.ray_at(u, v);
-
-                // TODO: fix clamped add
-                pixel_color += ray_color(r, &world);
-            }
-
-            let scale = 1.0 / (samples_per_pixel as f64);
-
-            let final_color = Color::new(
-                pixel_color.r() * scale,
-                pixel_color.g() * scale,
-                pixel_color.b() * scale,
-            );
-
-            println!("{}", final_color);
+            pixel_color += ray_color(r, &world);
         }
+
+        let scale = 1.0 / (samples_per_pixel as f64);
+
+        *pixel = Color::new(
+            pixel_color.r() * scale,
+            pixel_color.g() * scale,
+            pixel_color.b() * scale,
+        );
     }
+
+    image.save("result/output.ppm")?;
+
+    Ok(())
 }

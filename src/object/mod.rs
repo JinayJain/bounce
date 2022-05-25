@@ -1,5 +1,5 @@
-mod hittable;
+mod hit;
 mod sphere;
 
-pub use hittable::*;
+pub use hit::*;
 pub use sphere::*;

@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::{ops::Range, rc::Rc};
 
 use crate::geometry::{Point, Ray, Vec3};
 
@@ -8,12 +8,13 @@ pub struct HitRecord {
     pub t: f64,
 }
 
-pub trait Hittable {
+pub trait Hit {
     fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord>;
 }
 
+/// Stores a list of references to Hit objects
 pub struct HittableList {
-    objects: Vec<Box<dyn Hittable>>,
+    objects: Vec<Rc<dyn Hit>>,
 }
 
 impl HittableList {
@@ -24,12 +25,12 @@ impl HittableList {
     }
 
     // TODO: Replace Box with a reference counting equivalent
-    pub fn add(&mut self, object: Box<dyn Hittable>) {
+    pub fn add(&mut self, object: Rc<dyn Hit>) {
         self.objects.push(object);
     }
 }
 
-impl Hittable for HittableList {
+impl Hit for HittableList {
     /// Returns the closest hit from hitting all elements in the list
     fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord> {
         let mut closest_t = t_range.end;

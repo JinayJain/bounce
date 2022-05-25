@@ -39,11 +39,27 @@ impl Mul<Color> for f64 {
     }
 }
 
+fn clamp<T: PartialOrd>(x: T, min: T, max: T) -> T {
+    if x > max {
+        return max;
+    }
+
+    if x < min {
+        return min;
+    }
+
+    x
+}
+
 impl Display for Color {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let r = (self.r() * 255.99) as u8;
-        let g = (self.g() * 255.99) as u8;
-        let b = (self.b() * 255.99) as u8;
+        let r = clamp(self.r(), 0.0, 0.999);
+        let g = clamp(self.g(), 0.0, 0.999);
+        let b = clamp(self.b(), 0.0, 0.999);
+
+        let r = (r * 255.99) as u8;
+        let g = (g * 255.99) as u8;
+        let b = (b * 255.99) as u8;
 
         write!(f, "{} {} {}", r, g, b)
     }
