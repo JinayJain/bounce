@@ -5,18 +5,18 @@ use crate::geometry::{Point, Ray, Vec3};
 use super::{Hit, HitRecord};
 
 pub struct Sphere {
-    center: Point<f64>,
-    radius: f64,
+    center: Point<f32>,
+    radius: f32,
 }
 
 impl Sphere {
-    pub fn new(center: Point<f64>, radius: f64) -> Sphere {
+    pub fn new(center: Point<f32>, radius: f32) -> Sphere {
         Sphere { center, radius }
     }
 }
 
 impl Hit for Sphere {
-    fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord> {
+    fn hit(&self, r: Ray, t_range: Range<f32>) -> Option<HitRecord> {
         let direction = r.direction();
         let ray_origin = r.origin();
 

@@ -1,4 +1,4 @@
-use std::{io, rc::Rc};
+use std::{io, path::PathBuf, rc::Rc};
 
 use bounce::{
     camera::Camera,
@@ -7,10 +7,22 @@ use bounce::{
     image::Image,
     object::{Hit, HittableList, Sphere},
 };
+use clap::Parser;
 use indicatif::ProgressIterator;
 
+#[derive(Parser)]
+#[clap(about)]
+struct Args {
+    /// Where to save the output image
+    #[clap(parse(from_os_str))]
+    output: PathBuf,
+
+    #[clap(long, short, default_value_t = 100)]
+    samples_per_pixel: u32,
+}
+
 fn ray_color(r: Ray, world: &HittableList) -> Color {
-    if let Some(hit) = world.hit(r, 0.0..f64::INFINITY) {
+    if let Some(hit) = world.hit(r, 0.0..f32::INFINITY) {
         return 0.5
             * Color::new(
                 hit.normal.x() + 1.0,
@@ -26,6 +38,8 @@ fn ray_color(r: Ray, world: &HittableList) -> Color {
 }
 
 fn main() -> io::Result<()> {
+    let args = Args::parse();
+
     // World
     let mut world = HittableList::new();
     world.add(Rc::new(Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5)));
@@ -34,7 +48,7 @@ fn main() -> io::Result<()> {
     // Image
     let background_color = Color::new(0.0, 0.0, 0.0);
     let mut image = Image::new(400, (400 as f32 / (16.0 / 9.0)) as usize, background_color);
-    let samples_per_pixel = 100;
+    let samples_per_pixel = args.samples_per_pixel;
 
     // Camera
 
@@ -47,15 +61,15 @@ fn main() -> io::Result<()> {
         let mut pixel_color = Color::new(0.0, 0.0, 0.0);
 
         for _ in 0..samples_per_pixel {
-            let u = (x as f64 + rand::random::<f64>()) / (width - 1) as f64;
-            let v = (y as f64 + rand::random::<f64>()) / (height - 1) as f64;
+            let u = (x as f32 + rand::random::<f32>()) / (width - 1) as f32;
+            let v = (y as f32 + rand::random::<f32>()) / (height - 1) as f32;
 
             let r = camera.ray_at(u, v);
 
             pixel_color += ray_color(r, &world);
         }
 
-        let scale = 1.0 / (samples_per_pixel as f64);
+        let scale = 1.0 / (samples_per_pixel as f32);
 
         *pixel = Color::new(
             pixel_color.r() * scale,
@@ -64,9 +78,12 @@ fn main() -> io::Result<()> {
         );
     }
 
-    image.save("result/output.ppm")?;
+    image.save(&args.output)?;
 
-    println!("Saved to file.");
+    println!(
+        "Saved to {}.",
+        args.output.into_os_string().into_string().unwrap()
+    );
 
     Ok(())
 }

@@ -1,6 +1,7 @@
 use std::{
     fs::File,
     io::{self, BufWriter, Write},
+    path::PathBuf,
     slice::IterMut,
 };
 
@@ -81,10 +82,10 @@ impl Image {
     }
 
     /// Save image to a file in PPM format
-    pub fn save(&self, filename: &str) -> io::Result<()> {
+    pub fn save(&self, path: &PathBuf) -> io::Result<()> {
         // TODO: Find another image format to output files in, or use existing library to output PNG/JPEG
 
-        let mut file = BufWriter::new(File::create(filename)?);
+        let mut file = BufWriter::new(File::create(path)?);
 
         writeln!(file, "P3")?;
         writeln!(file, "{} {}", self.width, self.height)?;

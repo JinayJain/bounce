@@ -1,6 +1,6 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-use super::Double;
+use rand::{thread_rng, Rng};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vec3<T> {
@@ -30,19 +30,33 @@ where
     }
 }
 
-impl Vec3<Double> {
-    pub fn len(&self) -> Double {
+impl Vec3<f32> {
+    /// Computes the 3D Euclidean length of the vector
+    pub fn len(&self) -> f32 {
         let sum = self.x * self.x + self.y * self.y + self.z * self.z;
         sum.sqrt()
     }
 
-    pub fn unit(&self) -> Vec3<Double> {
+    /// Returns the unit-length representation of the Vec3
+    pub fn unit(&self) -> Vec3<f32> {
         let len = self.len();
         Vec3::new(self.x / len, self.y / len, self.z / len)
     }
 
-    pub fn dot(&self, other: Vec3<Double>) -> Double {
+    /// Computes the dot product between two vectors by multiplying their components
+    pub fn dot(&self, other: Vec3<f32>) -> f32 {
         self.x * other.x + self.y * other.y + self.z * other.z
+    }
+
+    /// Generates a random vector where all components are in the half-open range [min, max)
+    pub fn random(min: f32, max: f32) -> Vec3<f32> {
+        let mut rng = thread_rng();
+
+        Vec3 {
+            x: rng.gen_range(min..max),
+            y: rng.gen_range(min..max),
+            z: rng.gen_range(min..max),
+        }
     }
 }
 
