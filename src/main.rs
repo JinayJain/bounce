@@ -7,6 +7,7 @@ use bounce::{
     image::Image,
     object::{Hit, HittableList, Sphere},
 };
+use indicatif::ProgressIterator;
 
 fn ray_color(r: Ray, world: &HittableList) -> Color {
     if let Some(hit) = world.hit(r, 0.0..f64::INFINITY) {
@@ -32,7 +33,7 @@ fn main() -> io::Result<()> {
 
     // Image
     let background_color = Color::new(0.0, 0.0, 0.0);
-    let mut image = Image::new(400, 400, background_color);
+    let mut image = Image::new(400, (400 as f32 / (16.0 / 9.0)) as usize, background_color);
     let samples_per_pixel = 100;
 
     // Camera
@@ -42,7 +43,7 @@ fn main() -> io::Result<()> {
 
     let width = image.width();
     let height = image.height();
-    for (x, y, pixel) in image.pixels() {
+    for (x, y, pixel) in image.pixels().progress() {
         let mut pixel_color = Color::new(0.0, 0.0, 0.0);
 
         for _ in 0..samples_per_pixel {
@@ -64,6 +65,8 @@ fn main() -> io::Result<()> {
     }
 
     image.save("result/output.ppm")?;
+
+    println!("Saved to file.");
 
     Ok(())
 }

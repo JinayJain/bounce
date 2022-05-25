@@ -24,7 +24,6 @@ impl HittableList {
         }
     }
 
-    // TODO: Replace Box with a reference counting equivalent
     pub fn add(&mut self, object: Rc<dyn Hit>) {
         self.objects.push(object);
     }

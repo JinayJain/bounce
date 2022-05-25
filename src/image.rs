@@ -12,6 +12,7 @@ pub struct Image {
 
     /// Pixels are stored contiguously for better caching.
     /// Read left to right, row by row.
+    /// Improves data locality by making data contiguous for caching.
     pixels: Vec<Color>,
 }
 
@@ -48,6 +49,11 @@ impl<'img> Iterator for PixelIterator<'img> {
         None
     }
 }
+impl ExactSizeIterator for PixelIterator<'_> {
+    fn len(&self) -> usize {
+        self.height * self.width
+    }
+}
 
 impl Image {
     pub fn new(width: usize, height: usize, default: Color) -> Self {
@@ -74,7 +80,10 @@ impl Image {
         PixelIterator::new(self)
     }
 
+    /// Save image to a file in PPM format
     pub fn save(&self, filename: &str) -> io::Result<()> {
+        // TODO: Find another image format to output files in, or use existing library to output PNG/JPEG
+
         let mut file = BufWriter::new(File::create(filename)?);
 
         writeln!(file, "P3")?;
