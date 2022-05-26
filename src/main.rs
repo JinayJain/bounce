@@ -3,8 +3,9 @@ use std::{io, path::PathBuf, rc::Rc};
 use bounce::{
     camera::Camera,
     color::Color,
-    geometry::{Point, Ray, Vec3},
+    geometry::{Point, Ray},
     image::Image,
+    material::{Lambertian, Material, Metal},
     object::{Hit, HittableList, Sphere},
 };
 use clap::Parser;
@@ -39,14 +40,11 @@ fn ray_color(r: Ray, world: &HittableList, depth: u32) -> Color {
     }
 
     if let Some(hit) = world.hit(r, HIT_TOLERANCE..f64::INFINITY) {
-        let bounce_dir = Vec3::from(hit.point) + hit.normal + Vec3::random_unit();
+        if let Some((scattered, attenuation)) = hit.material.scatter(r, &hit) {
+            return attenuation * ray_color(scattered, &world, depth - 1);
+        }
 
-        return 0.5
-            * ray_color(
-                Ray::new(hit.point, bounce_dir - hit.point.into()),
-                world,
-                depth - 1,
-            );
+        return Color::new(0.0, 0.0, 0.0);
     }
 
     let unit = r.direction().unit();
@@ -65,8 +63,33 @@ fn main() -> io::Result<()> {
 
     // World
     let mut world = HittableList::new();
-    world.add(Rc::new(Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5)));
-    world.add(Rc::new(Sphere::new(Point::new(0.0, -100.5, -1.0), 100.0)));
+
+    type MatRef = Rc<dyn Material>;
+
+    let silver: MatRef = Rc::new(Metal::new(Color::new(0.8, 0.8, 0.8)));
+    let gold: MatRef = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2)));
+    let red: MatRef = Rc::new(Lambertian::new(Color::new(0.3, 0.0, 0.0)));
+
+    world.add(Box::new(Sphere::new(
+        Point::new(0.0, 0.0, -1.0),
+        0.5,
+        Rc::clone(&red),
+    )));
+    world.add(Box::new(Sphere::new(
+        Point::new(1.0, 0.0, -1.0),
+        0.5,
+        Rc::clone(&silver),
+    )));
+    world.add(Box::new(Sphere::new(
+        Point::new(-1.0, 0.0, -1.0),
+        0.5,
+        Rc::clone(&gold),
+    )));
+    world.add(Box::new(Sphere::new(
+        Point::new(0.0, -100.5, -1.0),
+        100.0,
+        Rc::clone(&red),
+    )));
 
     // Image
     let background_color = Color::new(0.0, 0.0, 0.0);

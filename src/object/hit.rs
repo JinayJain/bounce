@@ -1,12 +1,15 @@
 use std::{ops::Range, rc::Rc};
 
-use crate::geometry::{Point, Ray, Vec3};
+use crate::{
+    geometry::{Point, Ray, Vec3},
+    material::Material,
+};
 
-#[derive(Debug)]
 pub struct HitRecord {
     pub point: Point<f64>,
     pub normal: Vec3<f64>,
     pub t: f64,
+    pub material: Rc<dyn Material>,
 }
 
 pub trait Hit {
@@ -15,7 +18,7 @@ pub trait Hit {
 
 /// Stores a list of references to Hit objects
 pub struct HittableList {
-    objects: Vec<Rc<dyn Hit>>,
+    objects: Vec<Box<dyn Hit>>,
 }
 
 impl HittableList {
@@ -25,7 +28,7 @@ impl HittableList {
         }
     }
 
-    pub fn add(&mut self, object: Rc<dyn Hit>) {
+    pub fn add(&mut self, object: Box<dyn Hit>) {
         self.objects.push(object);
     }
 }

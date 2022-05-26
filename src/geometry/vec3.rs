@@ -52,6 +52,11 @@ impl Vec3<f64> {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
+    /// Reflects the vector by a surface given by its normal vector
+    pub fn reflect(&self, normal: Self) -> Self {
+        self.clone() - normal * 2.0 * self.dot(normal)
+    }
+
     /// Generates a random vector where all components are in the half-open range [min, max)
     pub fn random(min: f64, max: f64) -> Self {
         let mut rng = thread_rng();
@@ -61,6 +66,12 @@ impl Vec3<f64> {
             y: rng.gen_range(min..max),
             z: rng.gen_range(min..max),
         }
+    }
+
+    pub fn near_zero(&self) -> bool {
+        const THRESHOLD: f64 = 1e-8;
+
+        (self.x.abs() < THRESHOLD) && (self.y.abs() < THRESHOLD) && (self.z.abs() < THRESHOLD)
     }
 
     /// Generate a random vector that lies in the unit-radius sphere
@@ -77,6 +88,22 @@ impl Vec3<f64> {
 
     pub fn random_unit() -> Self {
         Self::random_in_unit_sphere().unit()
+    }
+}
+
+impl Mul<Vec3<f64>> for f64 {
+    type Output = Vec3<f64>;
+
+    fn mul(self, rhs: Vec3<f64>) -> Self::Output {
+        rhs * self
+    }
+}
+
+impl Div<Vec3<f64>> for f64 {
+    type Output = Vec3<f64>;
+
+    fn div(self, rhs: Vec3<f64>) -> Self::Output {
+        rhs / self
     }
 }
 
