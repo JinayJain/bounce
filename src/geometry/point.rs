@@ -14,6 +14,18 @@ where
     pub fn new(x: T, y: T, z: T) -> Point<T> {
         Point(Vec3::new(x, y, z))
     }
+
+    pub fn x(&self) -> T {
+        self.0.x()
+    }
+
+    pub fn y(&self) -> T {
+        self.0.y()
+    }
+
+    pub fn z(&self) -> T {
+        self.0.z()
+    }
 }
 
 impl<T> From<Vec3<T>> for Point<T> {

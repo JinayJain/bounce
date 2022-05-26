@@ -3,7 +3,7 @@ use std::{io, path::PathBuf, rc::Rc};
 use bounce::{
     camera::Camera,
     color::Color,
-    geometry::{Point, Ray},
+    geometry::{Point, Ray, Vec3},
     image::Image,
     object::{Hit, HittableList, Sphere},
 };
@@ -19,15 +19,33 @@ struct Args {
 
     #[clap(long, short, default_value_t = 100)]
     samples_per_pixel: u32,
+
+    #[clap(long, short, default_value_t = 50)]
+    max_depth: u32,
+
+    #[clap(long, default_value_t = 400)]
+    width: usize,
+
+    #[clap(long, default_value_t = 225)]
+    height: usize,
 }
 
-fn ray_color(r: Ray, world: &HittableList) -> Color {
-    if let Some(hit) = world.hit(r, 0.0..f32::INFINITY) {
+/// Prevents bounced rays from hitting at the same point
+const HIT_TOLERANCE: f64 = 0.001;
+
+fn ray_color(r: Ray, world: &HittableList, depth: u32) -> Color {
+    if depth <= 0 {
+        return Color::new(0.0, 0.0, 0.0);
+    }
+
+    if let Some(hit) = world.hit(r, HIT_TOLERANCE..f64::INFINITY) {
+        let bounce_dir = Vec3::from(hit.point) + hit.normal + Vec3::random_unit();
+
         return 0.5
-            * Color::new(
-                hit.normal.x() + 1.0,
-                hit.normal.y() + 1.0,
-                hit.normal.z() + 1.0,
+            * ray_color(
+                Ray::new(hit.point, bounce_dir - hit.point.into()),
+                world,
+                depth - 1,
             );
     }
 
@@ -40,6 +58,11 @@ fn ray_color(r: Ray, world: &HittableList) -> Color {
 fn main() -> io::Result<()> {
     let args = Args::parse();
 
+    let samples_per_pixel = args.samples_per_pixel;
+    let max_depth = args.max_depth;
+    let image_width = args.width;
+    let image_height = args.height;
+
     // World
     let mut world = HittableList::new();
     world.add(Rc::new(Sphere::new(Point::new(0.0, 0.0, -1.0), 0.5)));
@@ -47,13 +70,16 @@ fn main() -> io::Result<()> {
 
     // Image
     let background_color = Color::new(0.0, 0.0, 0.0);
-    let mut image = Image::new(400, (400 as f32 / (16.0 / 9.0)) as usize, background_color);
-    let samples_per_pixel = args.samples_per_pixel;
+    let mut image = Image::new(image_width, image_height, background_color);
 
     // Camera
 
     // TODO: Camera and image aspect ratio should match
-    let camera = Camera::default();
+
+    let aspect_ratio = image_width as f64 / image_height as f64;
+    let viewport_height = 2.0;
+    let viewport_width = aspect_ratio * viewport_height;
+    let camera = Camera::new(viewport_height, viewport_width, 1.0);
 
     let width = image.width();
     let height = image.height();
@@ -61,20 +87,20 @@ fn main() -> io::Result<()> {
         let mut pixel_color = Color::new(0.0, 0.0, 0.0);
 
         for _ in 0..samples_per_pixel {
-            let u = (x as f32 + rand::random::<f32>()) / (width - 1) as f32;
-            let v = (y as f32 + rand::random::<f32>()) / (height - 1) as f32;
+            let u = (x as f64 + rand::random::<f64>()) / (width - 1) as f64;
+            let v = (y as f64 + rand::random::<f64>()) / (height - 1) as f64;
 
             let r = camera.ray_at(u, v);
 
-            pixel_color += ray_color(r, &world);
+            pixel_color += ray_color(r, &world, max_depth);
         }
 
-        let scale = 1.0 / (samples_per_pixel as f32);
+        let scale = 1.0 / (samples_per_pixel as f64);
 
         *pixel = Color::new(
-            pixel_color.r() * scale,
-            pixel_color.g() * scale,
-            pixel_color.b() * scale,
+            (pixel_color.r() * scale).sqrt(),
+            (pixel_color.g() * scale).sqrt(),
+            (pixel_color.b() * scale).sqrt(),
         );
     }
 

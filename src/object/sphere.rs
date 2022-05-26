@@ -5,27 +5,27 @@ use crate::geometry::{Point, Ray, Vec3};
 use super::{Hit, HitRecord};
 
 pub struct Sphere {
-    center: Point<f32>,
-    radius: f32,
+    center: Point<f64>,
+    radius: f64,
 }
 
 impl Sphere {
-    pub fn new(center: Point<f32>, radius: f32) -> Sphere {
+    pub fn new(center: Point<f64>, radius: f64) -> Sphere {
         Sphere { center, radius }
     }
 }
 
 impl Hit for Sphere {
-    fn hit(&self, r: Ray, t_range: Range<f32>) -> Option<HitRecord> {
+    fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord> {
         let direction = r.direction();
         let ray_origin = r.origin();
 
         let offset = Vec3::from(ray_origin - self.center);
 
         // Form quadratic for sphere intersection checking (simplified)
-        let a = direction.len().powi(2);
+        let a = direction.len_sq();
         let half_b = direction.dot(offset);
-        let c = offset.len().powi(2) - self.radius.powi(2);
+        let c = offset.len_sq() - self.radius.powi(2);
 
         let discriminant = half_b.powi(2) - a * c;
         let sqrt_discrim = discriminant.sqrt();

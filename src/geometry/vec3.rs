@@ -30,26 +30,30 @@ where
     }
 }
 
-impl Vec3<f32> {
+impl Vec3<f64> {
     /// Computes the 3D Euclidean length of the vector
-    pub fn len(&self) -> f32 {
-        let sum = self.x * self.x + self.y * self.y + self.z * self.z;
-        sum.sqrt()
+    pub fn len(&self) -> f64 {
+        self.len_sq().sqrt()
+    }
+
+    /// Computes the squared length of a vector, equivalent to `v.dot(v)`
+    pub fn len_sq(&self) -> f64 {
+        self.x * self.x + self.y * self.y + self.z * self.z
     }
 
     /// Returns the unit-length representation of the Vec3
-    pub fn unit(&self) -> Vec3<f32> {
+    pub fn unit(&self) -> Self {
         let len = self.len();
         Vec3::new(self.x / len, self.y / len, self.z / len)
     }
 
     /// Computes the dot product between two vectors by multiplying their components
-    pub fn dot(&self, other: Vec3<f32>) -> f32 {
+    pub fn dot(&self, other: Vec3<f64>) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
     /// Generates a random vector where all components are in the half-open range [min, max)
-    pub fn random(min: f32, max: f32) -> Vec3<f32> {
+    pub fn random(min: f64, max: f64) -> Self {
         let mut rng = thread_rng();
 
         Vec3 {
@@ -57,6 +61,22 @@ impl Vec3<f32> {
             y: rng.gen_range(min..max),
             z: rng.gen_range(min..max),
         }
+    }
+
+    /// Generate a random vector that lies in the unit-radius sphere
+    pub fn random_in_unit_sphere() -> Self {
+        // keep generating vectors until they lie in the unit radius sphere (and not the surrounding cube)
+        loop {
+            let cand = Vec3::random(-1.0, 1.0);
+
+            if cand.len_sq() <= 1.0 {
+                return cand;
+            }
+        }
+    }
+
+    pub fn random_unit() -> Self {
+        Self::random_in_unit_sphere().unit()
     }
 }
 

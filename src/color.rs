@@ -3,35 +3,35 @@ use std::fmt::Display;
 use crate::{geometry::Vec3, impl_math};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Color(Vec3<f32>);
+pub struct Color(Vec3<f64>);
 
 impl Color {
-    pub fn new(r: f32, g: f32, b: f32) -> Color {
+    pub fn new(r: f64, g: f64, b: f64) -> Color {
         Color(Vec3::new(r, g, b))
     }
 
-    pub fn r(&self) -> f32 {
+    pub fn r(&self) -> f64 {
         self.0.x()
     }
 
-    pub fn g(&self) -> f32 {
+    pub fn g(&self) -> f64 {
         self.0.y()
     }
 
-    pub fn b(&self) -> f32 {
+    pub fn b(&self) -> f64 {
         self.0.z()
     }
 }
 
-impl Mul<f32> for Color {
+impl Mul<f64> for Color {
     type Output = Self;
 
-    fn mul(self, other: f32) -> Self {
+    fn mul(self, other: f64) -> Self {
         Color(self.0 * other)
     }
 }
 
-impl Mul<Color> for f32 {
+impl Mul<Color> for f64 {
     type Output = Color;
 
     fn mul(self, other: Color) -> Self::Output {
@@ -57,9 +57,9 @@ impl Display for Color {
         let g = clamp(self.g(), 0.0, 0.999);
         let b = clamp(self.b(), 0.0, 0.999);
 
-        let r = (r * 255.99) as u8;
-        let g = (g * 255.99) as u8;
-        let b = (b * 255.99) as u8;
+        let r = (r * 256.0) as u8;
+        let g = (g * 256.0) as u8;
+        let b = (b * 256.0) as u8;
 
         write!(f, "{} {} {}", r, g, b)
     }
