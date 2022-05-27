@@ -84,7 +84,12 @@ fn main() -> io::Result<()> {
     )));
     world.add(Box::new(Sphere::new(
         Point::new(-1.0, 0.0, -1.0),
-        -0.5,
+        0.5,
+        Rc::clone(&glass),
+    )));
+    world.add(Box::new(Sphere::new(
+        Point::new(-1.0, 0.0, -1.0),
+        -0.45,
         Rc::clone(&glass),
     )));
     world.add(Box::new(Sphere::new(
