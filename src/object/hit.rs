@@ -1,4 +1,4 @@
-use std::{ops::Range, rc::Rc};
+use std::{ops::Range, rc::Rc, sync::Arc};
 
 use crate::{
     geometry::{Point, Ray, Vec3},
@@ -9,7 +9,7 @@ pub struct HitRecord {
     pub point: Point<f64>,
     pub normal: Vec3<f64>,
     pub t: f64,
-    pub material: Rc<dyn Material>,
+    pub material: Arc<dyn Material>,
     pub front_face: bool,
 
     /// Introduce a private field to force users to use the new() function (can't bypass front_face calculation).
@@ -25,7 +25,7 @@ impl HitRecord {
         point: Point<f64>,
         normal: Vec3<f64>,
         t: f64,
-        material: Rc<dyn Material>,
+        material: Arc<dyn Material>,
     ) -> Self {
         let front_face = r.direction().dot(normal) < 0.0;
         let normal = if front_face { normal } else { -normal };
@@ -41,7 +41,7 @@ impl HitRecord {
     }
 }
 
-pub trait Hit {
+pub trait Hit: Sync + Send {
     fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord>;
 }
 

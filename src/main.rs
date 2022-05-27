@@ -1,15 +1,15 @@
-use std::{f64::consts::FRAC_PI_4, io, path::PathBuf, rc::Rc};
+use std::{io, path::PathBuf, sync::Arc};
 
 use bounce::{
     camera::Camera,
     color::Color,
     geometry::{Point, Ray, Vec3},
     image::Image,
-    material::{Dielectric, Lambertian, Material, Metal},
+    material::{Lambertian, Material, Metal},
     object::{Hit, HittableList, Sphere},
 };
 use clap::Parser;
-use indicatif::ProgressIterator;
+use indicatif::{ProgressBar, ProgressStyle};
 
 #[derive(Parser)]
 #[clap(about)]
@@ -86,7 +86,18 @@ fn main() -> io::Result<()> {
 
     let width = image.width();
     let height = image.height();
-    for (x, y, pixel) in image.pixels().progress() {
+
+    let world = Arc::new(world);
+
+    let pb = ProgressBar::new((image.height() * image.width()) as u64);
+
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] {wide_bar} {pos}/{len} ({eta})")
+            .progress_chars("#>-"),
+    );
+
+    image.apply_parallel(|x, y, pixel| {
         let mut pixel_color = Color::new(0.0, 0.0, 0.0);
 
         for _ in 0..samples_per_pixel {
@@ -105,7 +116,9 @@ fn main() -> io::Result<()> {
             (pixel_color.g() * scale).sqrt(),
             (pixel_color.b() * scale).sqrt(),
         );
-    }
+
+        pb.inc(1);
+    });
 
     image.save(&args.output)?;
 
@@ -120,17 +133,16 @@ fn main() -> io::Result<()> {
 fn random_scene() -> HittableList {
     let mut world = HittableList::new();
 
-    type MatRef = Rc<dyn Material>;
-    let ground_material: MatRef = Rc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
+    type MatRef = Arc<dyn Material>;
+
     world.add(Box::new(Sphere::new(
         Point::new(0.0, -1000.0, 0.0),
         1000.0,
-        Rc::clone(&ground_material),
+        Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5))),
     )));
 
     for a in -11..11 {
         for b in -11..11 {
-            let choose_mat = rand::random::<f64>();
             let center = Point::new(
                 a as f64 + 0.9 * rand::random::<f64>(),
                 0.2,
@@ -138,52 +150,27 @@ fn random_scene() -> HittableList {
             );
 
             if Vec3::from(center - Point::new(4.0, 0.2, 0.0)).len() > 0.9 {
-                if choose_mat < 0.8 {
-                    // diffuse
-                    let albedo = Color::new(
+                let material: MatRef = if rand::random::<f64>() < 0.8 {
+                    Arc::new(Lambertian::new(Color::new(
                         rand::random::<f64>() * rand::random::<f64>(),
                         rand::random::<f64>() * rand::random::<f64>(),
                         rand::random::<f64>() * rand::random::<f64>(),
-                    );
-                    let material: MatRef = Rc::new(Lambertian::new(albedo));
-                    world.add(Box::new(Sphere::new(center, 0.2, Rc::clone(&material))));
-                } else if choose_mat < 0.95 {
-                    // metal
-                    let albedo = Color::new(
-                        0.5 * (1.0 + rand::random::<f64>()),
-                        0.5 * (1.0 + rand::random::<f64>()),
-                        0.5 * (1.0 + rand::random::<f64>()),
-                    );
-                    let fuzz = 0.5 * rand::random::<f64>();
-                    let material: MatRef = Rc::new(Metal::new(albedo, fuzz));
-                    world.add(Box::new(Sphere::new(center, 0.2, Rc::clone(&material))));
+                    )))
                 } else {
-                    // glass
-                    let material: MatRef = Rc::new(Dielectric::new(1.5));
-                    world.add(Box::new(Sphere::new(center, 0.2, Rc::clone(&material))));
-                }
+                    Arc::new(Metal::new(
+                        Color::new(
+                            0.5 * (1.0 + rand::random::<f64>()),
+                            0.5 * (1.0 + rand::random::<f64>()),
+                            0.5 * (1.0 + rand::random::<f64>()),
+                        ),
+                        0.5 * rand::random::<f64>(),
+                    ))
+                };
+
+                world.add(Box::new(Sphere::new(center, 0.2, Arc::clone(&material))));
             }
         }
     }
-
-    let material1: MatRef = Rc::new(Dielectric::new(1.5));
-    world.add(Box::new(Sphere::new(
-        Point::new(0.0, 1.0, 0.0),
-        1.0,
-        Rc::clone(&material1),
-    )));
-    let material2: MatRef = Rc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
-    world.add(Box::new(Sphere::new(
-        Point::new(-4.0, 1.0, 0.0),
-        1.0,
-        Rc::clone(&material2),
-    )));
-    let material3: MatRef = Rc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
-    world.add(Box::new(Sphere::new(
-        Point::new(4.0, 1.0, 0.0),
-        1.0,
-        Rc::clone(&material3),
-    )));
 
     world
 }

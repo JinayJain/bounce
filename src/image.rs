@@ -5,6 +5,8 @@ use std::{
     slice::IterMut,
 };
 
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+
 use crate::color::Color;
 
 pub struct Image {
@@ -50,6 +52,7 @@ impl<'img> Iterator for PixelIterator<'img> {
         None
     }
 }
+
 impl ExactSizeIterator for PixelIterator<'_> {
     fn len(&self) -> usize {
         self.height * self.width
@@ -81,8 +84,22 @@ impl Image {
         PixelIterator::new(self)
     }
 
+    pub fn apply_parallel(&mut self, f: impl Fn(usize, usize, &mut Color) + Sync) {
+        self.pixels
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(idx, pixel)| {
+                let x = idx % self.width;
+                let y = (self.height - 1) - idx / self.width;
+
+                f(x, y, pixel);
+            });
+    }
+
     /// Save image to a file in PPM format
-    pub fn save(&self, path: &PathBuf) -> io::Result<()> {
+    pub fn save(&self, path: impl Into<PathBuf>) -> io::Result<()> {
+        let path = path.into();
+
         // TODO: Find another image format to output files in, or use existing library to output PNG/JPEG
 
         let mut file = BufWriter::new(File::create(path)?);

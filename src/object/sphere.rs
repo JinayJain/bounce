@@ -1,4 +1,4 @@
-use std::{ops::Range, rc::Rc};
+use std::{ops::Range, rc::Rc, sync::Arc};
 
 use crate::{
     geometry::{Point, Ray, Vec3},
@@ -10,11 +10,11 @@ use super::{Hit, HitRecord};
 pub struct Sphere {
     center: Point<f64>,
     radius: f64,
-    material: Rc<dyn Material>,
+    material: Arc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point<f64>, radius: f64, material: Rc<dyn Material>) -> Sphere {
+    pub fn new(center: Point<f64>, radius: f64, material: Arc<dyn Material>) -> Sphere {
         Sphere {
             center,
             radius,
@@ -56,7 +56,7 @@ impl Hit for Sphere {
             hit_point,
             Vec3::from(hit_point - self.center) / self.radius,
             root,
-            Rc::clone(&self.material),
+            Arc::clone(&self.material),
         ))
     }
 }
