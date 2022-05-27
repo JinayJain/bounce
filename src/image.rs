@@ -5,7 +5,10 @@ use std::{
     slice::IterMut,
 };
 
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use rayon::{
+    iter::{IndexedParallelIterator, ParallelIterator},
+    slice::ParallelSliceMut,
+};
 
 use crate::color::Color;
 
@@ -86,13 +89,13 @@ impl Image {
 
     pub fn apply_parallel(&mut self, f: impl Fn(usize, usize, &mut Color) + Sync) {
         self.pixels
-            .par_iter_mut()
+            .par_chunks_mut(self.width)
             .enumerate()
-            .for_each(|(idx, pixel)| {
-                let x = idx % self.width;
-                let y = (self.height - 1) - idx / self.width;
-
-                f(x, y, pixel);
+            .for_each(|(y, row)| {
+                let y = self.height - y - 1;
+                row.iter_mut().enumerate().for_each(|(x, pixel)| {
+                    f(x, y, pixel);
+                });
             });
     }
 
