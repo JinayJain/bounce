@@ -103,7 +103,11 @@ impl Div<Vec3<f64>> for f64 {
     type Output = Vec3<f64>;
 
     fn div(self, rhs: Vec3<f64>) -> Self::Output {
-        rhs / self
+        Vec3 {
+            x: self / rhs.x,
+            y: self / rhs.y,
+            z: self / rhs.z,
+        }
     }
 }
 

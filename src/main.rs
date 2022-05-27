@@ -66,9 +66,10 @@ fn main() -> io::Result<()> {
 
     type MatRef = Rc<dyn Material>;
 
-    let silver: MatRef = Rc::new(Metal::new(Color::new(0.8, 0.8, 0.8)));
-    let gold: MatRef = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2)));
+    let silver: MatRef = Rc::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.5));
+    let gold: MatRef = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.1));
     let red: MatRef = Rc::new(Lambertian::new(Color::new(0.3, 0.0, 0.0)));
+    let ground: MatRef = Rc::new(Lambertian::new(Color::new(0.5, 0.6, 0.1)));
 
     world.add(Box::new(Sphere::new(
         Point::new(0.0, 0.0, -1.0),
@@ -88,7 +89,7 @@ fn main() -> io::Result<()> {
     world.add(Box::new(Sphere::new(
         Point::new(0.0, -100.5, -1.0),
         100.0,
-        Rc::clone(&red),
+        Rc::clone(&ground),
     )));
 
     // Image
@@ -96,8 +97,6 @@ fn main() -> io::Result<()> {
     let mut image = Image::new(image_width, image_height, background_color);
 
     // Camera
-
-    // TODO: Camera and image aspect ratio should match
 
     let aspect_ratio = image_width as f64 / image_height as f64;
     let viewport_height = 2.0;
