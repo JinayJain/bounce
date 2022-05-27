@@ -52,6 +52,15 @@ impl Vec3<f64> {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
+    /// Computes the cross product between two vectors by multiplying their components
+    pub fn cross(&self, other: Vec3<f64>) -> Self {
+        Vec3::new(
+            self.y * other.z - self.z * other.y,
+            self.z * other.x - self.x * other.z,
+            self.x * other.y - self.y * other.x,
+        )
+    }
+
     /// Reflects the vector by a surface given by its normal vector
     pub fn reflect(&self, normal: Self) -> Self {
         self.clone() - normal * 2.0 * self.dot(normal)
@@ -352,6 +361,20 @@ mod tests {
         let dot = a.dot(b);
 
         assert_eq!(dot, 32.0);
+    }
+
+    #[test]
+    fn test_cross_product() {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = Vec3::new(4.0, 5.0, 6.0);
+
+        let cross = a.cross(b);
+
+        assert_eq!(cross.x, -3.0);
+        assert_eq!(cross.y, 6.0);
+        assert_eq!(cross.z, -3.0);
+        assert_eq!(cross.dot(a), 0.0);
+        assert_eq!(cross.dot(b), 0.0);
     }
 
     #[test]

@@ -1,9 +1,9 @@
-use std::{io, path::PathBuf, rc::Rc};
+use std::{f64::consts::FRAC_PI_4, io, path::PathBuf, rc::Rc};
 
 use bounce::{
     camera::Camera,
     color::Color,
-    geometry::{Point, Ray},
+    geometry::{Point, Ray, Vec3},
     image::Image,
     material::{Dielectric, Lambertian, Material, Metal},
     object::{Hit, HittableList, Sphere},
@@ -62,41 +62,7 @@ fn main() -> io::Result<()> {
     let image_height = args.height;
 
     // World
-    let mut world = HittableList::new();
-
-    type MatRef = Rc<dyn Material>;
-
-    let silver: MatRef = Rc::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.5));
-    let gold: MatRef = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.1));
-    let red: MatRef = Rc::new(Lambertian::new(Color::new(0.3, 0.0, 0.0)));
-    let ground: MatRef = Rc::new(Lambertian::new(Color::new(0.5, 0.6, 0.1)));
-    let glass: MatRef = Rc::new(Dielectric::new(1.5));
-
-    world.add(Box::new(Sphere::new(
-        Point::new(0.0, 0.0, -1.0),
-        0.5,
-        Rc::clone(&red),
-    )));
-    world.add(Box::new(Sphere::new(
-        Point::new(1.0, 0.0, -1.0),
-        0.5,
-        Rc::clone(&silver),
-    )));
-    world.add(Box::new(Sphere::new(
-        Point::new(-1.0, 0.0, -1.0),
-        0.5,
-        Rc::clone(&glass),
-    )));
-    world.add(Box::new(Sphere::new(
-        Point::new(-1.0, 0.0, -1.0),
-        -0.45,
-        Rc::clone(&glass),
-    )));
-    world.add(Box::new(Sphere::new(
-        Point::new(0.0, -100.5, -1.0),
-        100.0,
-        Rc::clone(&ground),
-    )));
+    let world = random_scene();
 
     // Image
     let background_color = Color::new(0.0, 0.0, 0.0);
@@ -105,9 +71,18 @@ fn main() -> io::Result<()> {
     // Camera
 
     let aspect_ratio = image_width as f64 / image_height as f64;
-    let viewport_height = 2.0;
-    let viewport_width = aspect_ratio * viewport_height;
-    let camera = Camera::new(viewport_height, viewport_width, 1.0);
+    let aperture = 0.1;
+    let look_from = Point::new(13.0, 2.0, 3.0);
+    let look_at = Point::new(0.0, 0.0, 0.0);
+    let camera = Camera::new(
+        look_from,
+        look_at,
+        Vec3::new(0.0, 1.0, 0.0),
+        20.0,
+        aspect_ratio,
+        aperture,
+        10.0,
+    );
 
     let width = image.width();
     let height = image.height();
@@ -140,4 +115,75 @@ fn main() -> io::Result<()> {
     );
 
     Ok(())
+}
+
+fn random_scene() -> HittableList {
+    let mut world = HittableList::new();
+
+    type MatRef = Rc<dyn Material>;
+    let ground_material: MatRef = Rc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
+    world.add(Box::new(Sphere::new(
+        Point::new(0.0, -1000.0, 0.0),
+        1000.0,
+        Rc::clone(&ground_material),
+    )));
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = rand::random::<f64>();
+            let center = Point::new(
+                a as f64 + 0.9 * rand::random::<f64>(),
+                0.2,
+                b as f64 + 0.9 * rand::random::<f64>(),
+            );
+
+            if Vec3::from(center - Point::new(4.0, 0.2, 0.0)).len() > 0.9 {
+                if choose_mat < 0.8 {
+                    // diffuse
+                    let albedo = Color::new(
+                        rand::random::<f64>() * rand::random::<f64>(),
+                        rand::random::<f64>() * rand::random::<f64>(),
+                        rand::random::<f64>() * rand::random::<f64>(),
+                    );
+                    let material: MatRef = Rc::new(Lambertian::new(albedo));
+                    world.add(Box::new(Sphere::new(center, 0.2, Rc::clone(&material))));
+                } else if choose_mat < 0.95 {
+                    // metal
+                    let albedo = Color::new(
+                        0.5 * (1.0 + rand::random::<f64>()),
+                        0.5 * (1.0 + rand::random::<f64>()),
+                        0.5 * (1.0 + rand::random::<f64>()),
+                    );
+                    let fuzz = 0.5 * rand::random::<f64>();
+                    let material: MatRef = Rc::new(Metal::new(albedo, fuzz));
+                    world.add(Box::new(Sphere::new(center, 0.2, Rc::clone(&material))));
+                } else {
+                    // glass
+                    let material: MatRef = Rc::new(Dielectric::new(1.5));
+                    world.add(Box::new(Sphere::new(center, 0.2, Rc::clone(&material))));
+                }
+            }
+        }
+    }
+
+    let material1: MatRef = Rc::new(Dielectric::new(1.5));
+    world.add(Box::new(Sphere::new(
+        Point::new(0.0, 1.0, 0.0),
+        1.0,
+        Rc::clone(&material1),
+    )));
+    let material2: MatRef = Rc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    world.add(Box::new(Sphere::new(
+        Point::new(-4.0, 1.0, 0.0),
+        1.0,
+        Rc::clone(&material2),
+    )));
+    let material3: MatRef = Rc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
+    world.add(Box::new(Sphere::new(
+        Point::new(4.0, 1.0, 0.0),
+        1.0,
+        Rc::clone(&material3),
+    )));
+
+    world
 }
