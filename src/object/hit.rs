@@ -10,6 +10,35 @@ pub struct HitRecord {
     pub normal: Vec3<f64>,
     pub t: f64,
     pub material: Rc<dyn Material>,
+    pub front_face: bool,
+
+    /// Introduce a private field to force users to use the new() function (can't bypass front_face calculation).
+    /// Still allows for pub access of fields.
+    ///
+    /// Not the cleanest solution but it'll have to do for now.
+    _force_new: (),
+}
+
+impl HitRecord {
+    pub fn new(
+        r: Ray,
+        point: Point<f64>,
+        normal: Vec3<f64>,
+        t: f64,
+        material: Rc<dyn Material>,
+    ) -> Self {
+        let front_face = r.direction().dot(normal) < 0.0;
+        let normal = if front_face { normal } else { -normal };
+
+        Self {
+            point,
+            normal,
+            t,
+            material,
+            front_face,
+            _force_new: (),
+        }
+    }
 }
 
 pub trait Hit {

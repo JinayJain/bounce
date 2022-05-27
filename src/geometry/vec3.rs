@@ -57,6 +57,16 @@ impl Vec3<f64> {
         self.clone() - normal * 2.0 * self.dot(normal)
     }
 
+    /// Refracts the vector (should be unit) by the IOR ratio eta_ratio on the normal
+    pub fn refract(&self, normal: Vec3<f64>, eta_ratio: f64) -> Vec3<f64> {
+        let v = self.clone();
+        let cos_theta = normal.dot(-v).min(1.0);
+        let perpendicular = eta_ratio * (v + cos_theta * normal);
+        let parallel = -((1.0 - perpendicular.len_sq()).abs().sqrt()) * normal;
+
+        perpendicular + parallel
+    }
+
     /// Generates a random vector where all components are in the half-open range [min, max)
     pub fn random(min: f64, max: f64) -> Self {
         let mut rng = thread_rng();

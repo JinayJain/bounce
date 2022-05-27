@@ -1,8 +1,10 @@
 use crate::{color::Color, geometry::Ray, object::HitRecord};
 
+mod dielectric;
 mod lambertian;
 mod metal;
 
+pub use dielectric::*;
 pub use lambertian::*;
 pub use metal::*;
 

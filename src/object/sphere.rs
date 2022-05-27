@@ -51,11 +51,12 @@ impl Hit for Sphere {
 
         let hit_point = r.at(root);
 
-        Some(HitRecord {
-            t: root,
-            point: hit_point,
-            normal: Vec3::from(hit_point - self.center) / self.radius,
-            material: Rc::clone(&self.material),
-        })
+        Some(HitRecord::new(
+            r,
+            hit_point,
+            Vec3::from(hit_point - self.center) / self.radius,
+            root,
+            Rc::clone(&self.material),
+        ))
     }
 }

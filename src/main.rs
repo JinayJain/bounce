@@ -5,7 +5,7 @@ use bounce::{
     color::Color,
     geometry::{Point, Ray},
     image::Image,
-    material::{Lambertian, Material, Metal},
+    material::{Dielectric, Lambertian, Material, Metal},
     object::{Hit, HittableList, Sphere},
 };
 use clap::Parser;
@@ -70,6 +70,7 @@ fn main() -> io::Result<()> {
     let gold: MatRef = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.1));
     let red: MatRef = Rc::new(Lambertian::new(Color::new(0.3, 0.0, 0.0)));
     let ground: MatRef = Rc::new(Lambertian::new(Color::new(0.5, 0.6, 0.1)));
+    let glass: MatRef = Rc::new(Dielectric::new(1.5));
 
     world.add(Box::new(Sphere::new(
         Point::new(0.0, 0.0, -1.0),
@@ -83,8 +84,8 @@ fn main() -> io::Result<()> {
     )));
     world.add(Box::new(Sphere::new(
         Point::new(-1.0, 0.0, -1.0),
-        0.5,
-        Rc::clone(&gold),
+        -0.5,
+        Rc::clone(&glass),
     )));
     world.add(Box::new(Sphere::new(
         Point::new(0.0, -100.5, -1.0),
