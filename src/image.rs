@@ -83,6 +83,8 @@ impl Image {
 
     /// Returns an iterator giving `(x, y, pixel)` where `pixel` is a mutable reference to a pixel.
     /// Also includes `x` and `y` for the current pixel, where pixels are provided top to bottom, left to right.
+    ///
+    /// To apply a function in parallel on all pixels, use the `apply_parallel` method.
     pub fn pixels(&mut self) -> PixelIterator {
         PixelIterator::new(self)
     }
@@ -92,7 +94,7 @@ impl Image {
             .par_chunks_mut(self.width)
             .enumerate()
             .for_each(|(y, row)| {
-                let y = self.height - y - 1;
+                let y = (self.height - 1) - y;
                 row.iter_mut().enumerate().for_each(|(x, pixel)| {
                     f(x, y, pixel);
                 });

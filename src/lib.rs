@@ -1,3 +1,4 @@
+pub mod bounce;
 pub mod camera;
 pub mod color;
 pub mod geometry;
