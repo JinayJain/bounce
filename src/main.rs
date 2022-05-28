@@ -5,6 +5,7 @@ use bounce::{
     geometry::{Point, Vec3},
     image::Image,
     scene::Scene,
+    sky::Day,
 };
 use clap::Parser;
 use rand::Rng;
@@ -38,6 +39,8 @@ fn main() -> io::Result<()> {
     let image_height = args.height;
 
     let mut scene = Scene::new();
+
+    scene.sky(Day::new());
 
     let metal = scene.metal_material(Color::new(0.8, 0.8, 0.9), 0.8);
     let glass = scene.dielectric_material(1.5);
@@ -80,7 +83,7 @@ fn main() -> io::Result<()> {
 
     scene.plane(Point::new(0.0, -0.5, 0.0), Vec3::new(0.0, 1.0, 0.0), &metal);
 
-    let look_from = Point::new(20.0, 10.0, -20.0);
+    let look_from = Point::new(10.0, 10.0, -35.0);
     let look_at = Point::new(0.0, 5.0, -1.0);
     scene.camera(
         look_from,

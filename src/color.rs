@@ -10,6 +10,14 @@ impl Color {
         Color(Vec3::new(r, g, b))
     }
 
+    pub fn from_rgb(r: u8, g: u8, b: u8) -> Color {
+        let r = (r as f64) / 255.0;
+        let g = (g as f64) / 255.0;
+        let b = (b as f64) / 255.0;
+
+        Color::new(r, g, b)
+    }
+
     pub fn r(&self) -> f64 {
         self.0.x()
     }

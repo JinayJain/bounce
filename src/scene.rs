@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::{
     camera::Camera,
@@ -9,6 +9,7 @@ use crate::{
     image::Image,
     material::{Dielectric, Lambertian, Material, Metal},
     object::{Hit, HittableList, InfinitePlane, Sphere},
+    sky::{Sky, Uniform},
 };
 
 /*
@@ -30,6 +31,7 @@ const HIT_TOLERANCE: f64 = 0.0001;
 pub struct Scene {
     objects: HittableList,
     camera: Camera,
+    sky: Box<dyn Sky>,
 }
 
 impl Scene {
@@ -37,6 +39,7 @@ impl Scene {
         Self {
             objects: HittableList::new(),
             camera: Camera::default(),
+            sky: Box::new(Uniform::new(Color::white())),
         }
     }
 
@@ -71,6 +74,10 @@ impl Scene {
         material_arc
     }
 
+    pub fn sky(&mut self, sky: impl Sky + 'static) {
+        self.sky = Box::new(sky);
+    }
+
     pub fn camera(
         &mut self,
         look_from: Point<f64>,
@@ -97,6 +104,9 @@ impl Scene {
         let height = image.height();
 
         let pb = ProgressBar::new((width * height) as u64);
+        pb.set_style(ProgressStyle::default_bar().template(
+            "[{elapsed_precise}] {wide_bar} ({percent}%) [{pos}px / {len}px ({per_sec})]",
+        ));
 
         image.apply_parallel(|x, y, pixel_color| {
             let mut color = Color::new(0.0, 0.0, 0.0);
@@ -135,8 +145,6 @@ impl Scene {
         }
 
         let unit = r.direction().unit();
-        let t = 0.5 * (unit.y() + 1.0);
-
-        Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
+        self.sky.at(unit)
     }
 }
