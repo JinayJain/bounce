@@ -32,7 +32,7 @@ impl Camera {
         let unit_horizontal = view_up.cross(reverse_view_dir).unit();
         let unit_vertical = reverse_view_dir.cross(unit_horizontal);
 
-        assert!((unit_vertical.len_sq() - 1.0).abs() < 1e-8);
+        // assert!((unit_vertical.len_sq() - 1.0).abs() < 1e-8);
 
         let origin = look_from;
         let horizontal = viewport_width * focus_dist * unit_horizontal;

@@ -21,6 +21,14 @@ impl Color {
     pub fn b(&self) -> f64 {
         self.0.z()
     }
+
+    pub fn black() -> Color {
+        Color::new(0.0, 0.0, 0.0)
+    }
+
+    pub fn white() -> Color {
+        Color::new(1.0, 1.0, 1.0)
+    }
 }
 
 impl Mul<f64> for Color {

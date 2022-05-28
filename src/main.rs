@@ -1,12 +1,13 @@
 use std::{io, path::PathBuf};
 
 use bounce::{
-    bounce::Scene,
     color::Color,
     geometry::{Point, Vec3},
     image::Image,
+    scene::Scene,
 };
 use clap::Parser;
+use rand::Rng;
 
 #[derive(Parser)]
 #[clap(about)]
@@ -38,18 +39,54 @@ fn main() -> io::Result<()> {
 
     let mut scene = Scene::new();
 
-    let diffuse = scene.diffuse_material(Color::new(0.7, 0.3, 0.3));
-    let metal = scene.metal_material(Color::new(0.8, 0.8, 0.9), 0.3);
+    let metal = scene.metal_material(Color::new(0.8, 0.8, 0.9), 0.8);
+    let glass = scene.dielectric_material(1.5);
 
-    scene.sphere(Point::new(0.0, 0.0, -1.0), 0.5, &diffuse);
+    let num_diffuse = 50;
+    let num_glass = 30;
 
-    let look_from = Point::new(3.0, 3.0, 2.0);
-    let look_at = Point::new(0.0, 0.0, -1.0);
+    let coord_range = -10.0..10.0;
+    let mut rng = rand::thread_rng();
+
+    for _ in 0..num_diffuse {
+        let diffuse = scene.diffuse_material(Color::new(
+            rng.gen_range(0.0..1.0),
+            rng.gen_range(0.0..1.0),
+            rng.gen_range(0.0..1.0),
+        ));
+
+        scene.sphere(
+            Point::new(
+                rng.gen_range(coord_range.clone()),
+                rng.gen_range(0.0..coord_range.clone().end),
+                rng.gen_range(coord_range.clone()),
+            ),
+            0.5,
+            &diffuse,
+        );
+    }
+
+    for _ in 0..num_glass {
+        scene.sphere(
+            Point::new(
+                rng.gen_range(coord_range.clone()),
+                rng.gen_range(0.0..coord_range.clone().end),
+                rng.gen_range(coord_range.clone()),
+            ),
+            0.5,
+            &glass,
+        );
+    }
+
+    scene.plane(Point::new(0.0, -0.5, 0.0), Vec3::new(0.0, 1.0, 0.0), &metal);
+
+    let look_from = Point::new(20.0, 10.0, -20.0);
+    let look_at = Point::new(0.0, 5.0, -1.0);
     scene.camera(
         look_from,
         look_at,
         Vec3::new(0.0, 1.0, 0.0),
-        20.0,
+        40.0,
         (image_width as f64) / (image_height as f64),
         0.1,
         Vec3::from(look_from - look_at).len(),

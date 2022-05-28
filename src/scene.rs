@@ -1,12 +1,14 @@
 use std::sync::Arc;
 
+use indicatif::ProgressBar;
+
 use crate::{
     camera::Camera,
     color::Color,
     geometry::{Point, Ray, Vec3},
     image::Image,
     material::{Dielectric, Lambertian, Material, Metal},
-    object::{Hit, HittableList, Sphere},
+    object::{Hit, HittableList, InfinitePlane, Sphere},
 };
 
 /*
@@ -23,7 +25,7 @@ let sphere = scene.sphere(Point::new(0.0, 0.0, -1.0), 0.5, diffuse);
 
 */
 
-const HIT_TOLERANCE: f64 = 0.001;
+const HIT_TOLERANCE: f64 = 0.0001;
 
 pub struct Scene {
     objects: HittableList,
@@ -41,6 +43,14 @@ impl Scene {
     pub fn sphere(&mut self, center: Point<f64>, radius: f64, material: &Arc<dyn Material>) {
         self.objects
             .add(Box::new(Sphere::new(center, radius, material.clone())));
+    }
+
+    pub fn plane(&mut self, origin: Point<f64>, normal: Vec3<f64>, material: &Arc<dyn Material>) {
+        self.objects.add(Box::new(InfinitePlane::new(
+            origin,
+            normal,
+            Arc::clone(material),
+        )))
     }
 
     pub fn diffuse_material(&mut self, color: Color) -> Arc<dyn Material> {
@@ -86,6 +96,8 @@ impl Scene {
         let width = image.width();
         let height = image.height();
 
+        let pb = ProgressBar::new((width * height) as u64);
+
         image.apply_parallel(|x, y, pixel_color| {
             let mut color = Color::new(0.0, 0.0, 0.0);
             for _ in 0..samples_per_pixel {
@@ -104,6 +116,8 @@ impl Scene {
                 (color.g() * scale).sqrt(),
                 (color.b() * scale).sqrt(),
             );
+
+            pb.inc(1);
         });
     }
 
