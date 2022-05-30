@@ -43,6 +43,10 @@ impl Scene {
         }
     }
 
+    pub fn add(&mut self, object: impl Hit + 'static) {
+        self.objects.add(Box::new(object));
+    }
+
     pub fn sphere(&mut self, center: Point<f64>, radius: f64, material: &Arc<dyn Material>) {
         self.objects
             .add(Box::new(Sphere::new(center, radius, material.clone())));

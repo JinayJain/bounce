@@ -2,9 +2,9 @@
 
 A multithreaded raytracer written in Rust, inspired by the [Ray Tracing in One Weekend](https://raytracing.github.io/) series.
 
-<!-- ![](assets/example.png) -->
-
 <img src="assets/example.png" alt="example" width="50%">
+
+<img src="assets/teapot.png" alt="teapot" width="30%">
 
 ## Features
 
@@ -14,6 +14,7 @@ Currently, Bounce supports:
 - Camera with adjustable position, direction, depth of field, and field of view
 - Diffuse (Lambertian), glass (Schlick), and metallic material
 - Multithreaded rendering using [rayon](https://crates.io/crates/rayon)
+- OBJ file loading and rendering
 
 ## Planned features
 

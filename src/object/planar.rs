@@ -69,7 +69,7 @@ impl Tri {
     }
 }
 
-const EPSILON: f64 = 1e-6;
+const EPSILON: f64 = 1e-8;
 impl Hit for Tri {
     fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord> {
         // implementation of the Möller–Trumbore ray-triangle intersection algorithm

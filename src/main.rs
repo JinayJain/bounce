@@ -4,11 +4,11 @@ use bounce::{
     color::Color,
     geometry::{Point, Vec3},
     image::Image,
+    object::Object,
     scene::Scene,
     sky::Day,
 };
 use clap::Parser;
-use rand::Rng;
 
 #[derive(Parser)]
 #[clap(about)]
@@ -42,24 +42,13 @@ fn main() -> io::Result<()> {
 
     let mut scene = Scene::new();
 
-    scene.sky(Day::new());
+    let diffuse = scene.diffuse_material(Color::new(1.0, 0.3, 0.3));
 
-    let mat = scene.diffuse_material(Color::new(0.1, 0.5, 0.1));
-    let sphere_mat = scene.diffuse_material(Color::new(0.0, 0.3, 0.78));
+    let model = Object::new("files/teapot.obj", diffuse).expect("Unable to create OBJ object");
+    scene.add(model);
 
-    let offset = Point::new(1.0, -1.0, 0.0);
-    let a = Point::new(0.0, 0.0, -1.0) + offset;
-    let b = Point::new(0.0, 2.0, -1.0) + offset;
-    let c = Point::new(-2.0, 0.0, -1.0) + offset;
-
-    scene.triangle(c, b, a, &mat);
-
-    scene.sphere(a, 0.1, &sphere_mat);
-    scene.sphere(b, 0.1, &sphere_mat);
-    scene.sphere(c, 0.1, &sphere_mat);
-
-    let look_from = Point::new(0.0, 0.0, -10.0);
-    let look_at = Point::new(0.0, 0.0, -1.0);
+    let look_from = Point::new(8.0, 5.0, -5.0);
+    let look_at = Point::new(0.0, 1.0, 0.0);
     let focus_dist = Vec3::from(look_at - look_from).len();
 
     scene.camera(
@@ -68,15 +57,16 @@ fn main() -> io::Result<()> {
         Vec3::new(0.0, 1.0, 0.0),
         30.0,
         aspect_ratio,
-        0.1,
+        0.0,
         focus_dist,
     );
+    scene.sky(Day::new());
 
-    let mut image = Image::new(image_width, image_height, Color::new(0.0, 0.0, 0.0));
+    let mut image = Image::new(image_width, image_height, Color::black());
 
     scene.render(&mut image, samples_per_pixel, max_depth);
 
-    image.save(&args.output)?;
+    image.save(args.output)?;
 
     Ok(())
 }
