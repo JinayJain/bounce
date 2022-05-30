@@ -7,7 +7,7 @@ use crate::{
     color::Color,
     geometry::{Point, Ray, Vec3},
     image::Image,
-    material::{self, Dielectric, Lambertian, Material, Metal},
+    material::{Dielectric, Lambertian, Material, Metal},
     object::{Hit, HittableList, InfinitePlane, Sphere, Tri},
     sky::{Sky, Uniform},
 };
@@ -118,6 +118,7 @@ impl Scene {
         pb.set_style(ProgressStyle::default_bar().template(
             "[{elapsed_precise}] {wide_bar} ({percent}%) [{pos}px / {len}px ({per_sec})]",
         ));
+        pb.set_draw_delta(500);
 
         image.apply_parallel(|x, y, pixel_color| {
             let mut color = Color::new(0.0, 0.0, 0.0);
