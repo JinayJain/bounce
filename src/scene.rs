@@ -7,8 +7,8 @@ use crate::{
     color::Color,
     geometry::{Point, Ray, Vec3},
     image::Image,
-    material::{Dielectric, Lambertian, Material, Metal},
-    object::{Hit, HittableList, InfinitePlane, Sphere},
+    material::{self, Dielectric, Lambertian, Material, Metal},
+    object::{Hit, HittableList, InfinitePlane, Sphere, Tri},
     sky::{Sky, Uniform},
 };
 
@@ -54,6 +54,17 @@ impl Scene {
             normal,
             Arc::clone(material),
         )))
+    }
+
+    pub fn triangle(
+        &mut self,
+        a: Point<f64>,
+        b: Point<f64>,
+        c: Point<f64>,
+        material: &Arc<dyn Material>,
+    ) {
+        self.objects
+            .add(Box::new(Tri::new(a, b, c, Arc::clone(material))))
     }
 
     pub fn diffuse_material(&mut self, color: Color) -> Arc<dyn Material> {

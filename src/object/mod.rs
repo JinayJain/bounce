@@ -1,7 +1,7 @@
 mod hit;
-mod plane;
+mod planar;
 mod sphere;
 
 pub use hit::*;
-pub use plane::*;
+pub use planar::*;
 pub use sphere::*;
