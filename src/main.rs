@@ -4,7 +4,7 @@ use bounce::{
     color::Color,
     geometry::{Point, Vec3},
     image::Image,
-    object::Object,
+    object::{bvh::BoundingBox, Object},
     scene::Scene,
     sky::Day,
 };
@@ -42,10 +42,8 @@ fn main() -> io::Result<()> {
 
     let mut scene = Scene::new();
 
-    let diffuse = scene.diffuse_material(Color::new(1.0, 0.3, 0.3));
-
-    let model = Object::new("files/teapot.obj", diffuse).expect("Unable to create OBJ object");
-    scene.add(model);
+    let bbox = BoundingBox::new(0.0..1.0, 0.0..1.0, 0.0..1.0);
+    scene.add(bbox);
 
     let look_from = Point::new(8.0, 5.0, -5.0);
     let look_at = Point::new(0.0, 1.0, 0.0);

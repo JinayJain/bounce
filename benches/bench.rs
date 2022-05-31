@@ -11,6 +11,8 @@ fn bench_sphere(c: &mut Criterion) {
     scene.sphere(Point::new(0.0, 0.0, -1.0), 0.5, &sphere_material);
     scene.sphere(Point::new(0.0, -100.5, -1.0), 100.0, &ground_material);
 
+    scene.progress(false);
+
     let mut image = Image::new(100, 100, Color::black());
     let samples_per_pixel = 100;
     let max_depth = 50;

@@ -1,6 +1,6 @@
 # Bounce
 
-A multithreaded raytracer written in Rust, inspired by the [Ray Tracing in One Weekend](https://raytracing.github.io/) series.
+A multithreaded raytracer written in Rust.
 
 <img src="assets/example.png" alt="example" width="50%">
 
@@ -24,3 +24,10 @@ In the future, I plan to add:
 - Additional object types beyond spheres
 - Lights
 - Rendering optimizations (such as bounding volume hierarchies)
+- Interactive 3D scene builder
+
+### References
+
+[Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
+
+[Physically Based Rendering: From Theory to Implementation](https://pbr-book.org/)

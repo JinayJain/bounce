@@ -32,6 +32,7 @@ pub struct Scene {
     objects: HittableList,
     camera: Camera,
     sky: Box<dyn Sky>,
+    show_progress: bool,
 }
 
 impl Scene {
@@ -40,6 +41,7 @@ impl Scene {
             objects: HittableList::new(),
             camera: Camera::default(),
             sky: Box::new(Uniform::new(Color::white())),
+            show_progress: true,
         }
     }
 
@@ -114,15 +116,25 @@ impl Scene {
         );
     }
 
+    pub fn progress(&mut self, show: bool) {
+        self.show_progress = show;
+    }
+
     pub fn render(&self, image: &mut Image, samples_per_pixel: u32, max_depth: u32) {
         let width = image.width();
         let height = image.height();
 
-        let pb = ProgressBar::new((width * height) as u64);
-        pb.set_style(ProgressStyle::default_bar().template(
-            "[{elapsed_precise}] {wide_bar} ({percent}%) [{pos}px / {len}px ({per_sec})]",
-        ));
-        pb.set_draw_delta(500);
+        let pb = if self.show_progress {
+            let pb = ProgressBar::new((width * height) as u64);
+            pb.set_style(ProgressStyle::default_bar().template(
+                "[{elapsed_precise}] {wide_bar} ({percent}%) [{pos}px / {len}px ({per_sec})]",
+            ));
+            pb.set_draw_delta(500);
+
+            Some(pb)
+        } else {
+            None
+        };
 
         image.apply_parallel(|x, y, pixel_color| {
             let mut color = Color::new(0.0, 0.0, 0.0);
@@ -143,7 +155,9 @@ impl Scene {
                 (color.b() * scale).sqrt(),
             );
 
-            pb.inc(1);
+            if let Some(pb) = &pb {
+                pb.inc(1);
+            }
         });
     }
 

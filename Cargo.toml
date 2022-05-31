@@ -17,5 +17,5 @@ rayon = "1.5.3"
 criterion = { version = "0.3.5", features = ["html_reports"] }
 
 [[bench]]
-name = "bench_sphere"
+name = "bench"
 harness = false
