@@ -4,7 +4,7 @@ use bounce::{
     color::Color,
     geometry::{Point, Vec3},
     image::Image,
-    object::{bvh::BoundingBox, Object},
+    object::bvh::BoundingBox,
     scene::Scene,
     sky::Day,
 };
@@ -41,9 +41,6 @@ fn main() -> io::Result<()> {
     let aspect_ratio = (image_width as f64) / (image_height as f64);
 
     let mut scene = Scene::new();
-
-    let bbox = BoundingBox::new(0.0..1.0, 0.0..1.0, 0.0..1.0);
-    scene.add(bbox);
 
     let look_from = Point::new(8.0, 5.0, -5.0);
     let look_at = Point::new(0.0, 1.0, 0.0);

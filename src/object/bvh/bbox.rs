@@ -1,18 +1,10 @@
 // https://gfxcourses.stanford.edu/cs248/winter21content/media/acceleration/09_acceleration.pdf
 
-use std::{
-    ops::{Bound, Range},
-    sync::Arc,
-};
+use std::ops::{Add, AddAssign, Range};
 
-use crate::{
-    color::Color,
-    geometry::{Ray, Vec3},
-    material::Lambertian,
-};
+use crate::geometry::Ray;
 
-use super::{Hit, HitRecord};
-
+#[derive(Debug, Clone)]
 pub struct BoundingBox {
     x: Range<f64>,
     y: Range<f64>,
@@ -22,6 +14,39 @@ pub struct BoundingBox {
 impl BoundingBox {
     pub fn new(x: Range<f64>, y: Range<f64>, z: Range<f64>) -> Self {
         Self { x, y, z }
+    }
+
+    pub fn x(&self) -> Range<f64> {
+        self.x.clone()
+    }
+
+    pub fn y(&self) -> Range<f64> {
+        self.y.clone()
+    }
+
+    pub fn z(&self) -> Range<f64> {
+        self.z.clone()
+    }
+}
+
+impl AddAssign for BoundingBox {
+    /// Computes the union of the bounding box with the rhs
+    fn add_assign(&mut self, rhs: Self) {
+        self.x = range_union(&self.x, &rhs.x);
+        self.y = range_union(&self.y, &rhs.y);
+        self.z = range_union(&self.z, &rhs.z);
+    }
+}
+
+impl Add for BoundingBox {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        BoundingBox {
+            x: range_union(&self.x, &rhs.x),
+            y: range_union(&self.y, &rhs.y),
+            z: range_union(&self.z, &rhs.z),
+        }
     }
 }
 
@@ -37,6 +62,10 @@ fn intersection(a: &Range<f64>, b: &Range<f64>) -> Option<Range<f64>> {
 
         Some(start..end)
     }
+}
+
+fn range_union(a: &Range<f64>, b: &Range<f64>) -> Range<f64> {
+    a.start.min(b.start)..a.end.max(b.end)
 }
 
 fn solve_axis(origin: f64, rate: f64, axis_range: &Range<f64>) -> Option<Range<f64>> {
@@ -67,8 +96,8 @@ macro_rules! unwrap_or_return {
     };
 }
 
-impl Hit for BoundingBox {
-    fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord> {
+impl BoundingBox {
+    pub fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<f64> {
         let t_range_x = solve_axis(r.origin().x(), r.direction().x(), &self.x);
         let t_range_y = solve_axis(r.origin().y(), r.direction().y(), &self.y);
         let t_range_z = solve_axis(r.origin().z(), r.direction().z(), &self.z);
@@ -85,13 +114,7 @@ impl Hit for BoundingBox {
         let combined = unwrap_or_return!(combined);
 
         let t = combined.start;
-        Some(HitRecord::new(
-            r,
-            r.at(t),
-            Vec3::new(0.0, 1.0, 0.0), // TODO: Implement normal for bounding box
-            t,
-            Arc::new(Lambertian::new(Color::new(0.0, 1.0, 0.0))), // TODO: Implement non-visible Hit for internal shapes like a bounding box
-        ))
+        Some(t)
     }
 }
 
