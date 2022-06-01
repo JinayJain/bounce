@@ -13,10 +13,10 @@ use crate::{
     object::Tri,
 };
 
-use super::{Hit, HitRecord, HittableList};
+use super::{Visible, VisibleHit, VisibleList};
 
 pub struct Object {
-    triangles: HittableList,
+    triangles: VisibleList,
 }
 
 impl Object {
@@ -35,9 +35,9 @@ impl Object {
     }
 }
 
-impl Hit for Object {
-    fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord> {
-        self.triangles.hit(r, t_range)
+impl Visible for Object {
+    fn bounce(&self, r: Ray, t_range: Range<f64>) -> Option<VisibleHit> {
+        self.triangles.bounce(r, t_range)
     }
 }
 
@@ -45,13 +45,13 @@ fn triangulate(
     vertices: Vec<Point<f64>>,
     faces: Vec<Vec<usize>>,
     material: Arc<dyn Material>,
-) -> HittableList {
+) -> VisibleList {
     assert!(
         faces.iter().all(|x| x.len() == 3),
         "TODO: Handle non-triangle object faces"
     );
 
-    let mut triangles = HittableList::new();
+    let mut triangles = VisibleList::new();
 
     for face in faces {
         let face: Vec<_> = face.iter().map(|x| x - 1).collect();

@@ -8,7 +8,7 @@ use crate::{
     geometry::{Point, Ray, Vec3},
     image::Image,
     material::{Dielectric, Lambertian, Material, Metal},
-    object::{Hit, HittableList, InfinitePlane, Sphere, Tri},
+    object::{InfinitePlane, Sphere, Tri, Visible, VisibleList},
     sky::{Sky, Uniform},
 };
 
@@ -29,7 +29,7 @@ let sphere = scene.sphere(Point::new(0.0, 0.0, -1.0), 0.5, diffuse);
 const HIT_TOLERANCE: f64 = 0.0001;
 
 pub struct Scene {
-    objects: HittableList,
+    objects: VisibleList,
     camera: Camera,
     sky: Box<dyn Sky>,
     show_progress: bool,
@@ -38,14 +38,14 @@ pub struct Scene {
 impl Scene {
     pub fn new() -> Self {
         Self {
-            objects: HittableList::new(),
+            objects: VisibleList::new(),
             camera: Camera::default(),
             sky: Box::new(Uniform::new(Color::white())),
             show_progress: true,
         }
     }
 
-    pub fn add(&mut self, object: impl Hit + 'static) {
+    pub fn add(&mut self, object: impl Visible + 'static) {
         self.objects.add(Box::new(object));
     }
 
@@ -166,7 +166,7 @@ impl Scene {
             return Color::new(0.0, 0.0, 0.0);
         }
 
-        if let Some(hit) = self.objects.hit(r, HIT_TOLERANCE..f64::INFINITY) {
+        if let Some(hit) = self.objects.bounce(r, HIT_TOLERANCE..f64::INFINITY) {
             if let Some((scattered, attenuation)) = hit.material.scatter(r, &hit) {
                 return attenuation * self.ray_color(scattered, depth - 1);
             }

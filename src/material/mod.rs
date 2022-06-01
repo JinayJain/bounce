@@ -1,4 +1,4 @@
-use crate::{color::Color, geometry::Ray, object::HitRecord};
+use crate::{color::Color, geometry::Ray, object::VisibleHit};
 
 mod dielectric;
 mod lambertian;
@@ -9,5 +9,5 @@ pub use lambertian::*;
 pub use metal::*;
 
 pub trait Material: Sync + Send {
-    fn scatter(&self, r: Ray, hit: &HitRecord) -> Option<(Ray, Color)>;
+    fn scatter(&self, r: Ray, hit: &VisibleHit) -> Option<(Ray, Color)>;
 }

@@ -5,7 +5,7 @@ use crate::{
     material::Material,
 };
 
-use super::{Hit, HitRecord};
+use super::{Visible, VisibleHit};
 
 pub struct InfinitePlane {
     normal: Vec3<f64>,
@@ -24,8 +24,8 @@ impl InfinitePlane {
     }
 }
 
-impl Hit for InfinitePlane {
-    fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord> {
+impl Visible for InfinitePlane {
+    fn bounce(&self, r: Ray, t_range: Range<f64>) -> Option<VisibleHit> {
         let denom = self.normal.dot(r.direction());
 
         // ray direction is parallel to the plane
@@ -38,7 +38,7 @@ impl Hit for InfinitePlane {
         let t = numer / denom;
 
         if t_range.contains(&t) {
-            Some(HitRecord::new(
+            Some(VisibleHit::new(
                 r,
                 r.at(t),
                 self.normal,
@@ -70,8 +70,8 @@ impl Tri {
 }
 
 const EPSILON: f64 = 1e-8;
-impl Hit for Tri {
-    fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord> {
+impl Visible for Tri {
+    fn bounce(&self, r: Ray, t_range: Range<f64>) -> Option<VisibleHit> {
         // implementation of the Möller–Trumbore ray-triangle intersection algorithm
         // variable names taken from the original paper: https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
 
@@ -104,7 +104,7 @@ impl Hit for Tri {
         if t_range.contains(&t) {
             let point = r.at(t);
 
-            Some(HitRecord::new(
+            Some(VisibleHit::new(
                 r,
                 point,
                 self.normal,

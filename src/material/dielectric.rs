@@ -1,5 +1,5 @@
 use super::Material;
-use crate::{color::Color, geometry::Ray, object::HitRecord};
+use crate::{color::Color, geometry::Ray, object::VisibleHit};
 
 pub struct Dielectric {
     ior: f64,
@@ -22,7 +22,7 @@ impl Dielectric {
 
 impl Material for Dielectric {
     // TODO: Verify that dielectric scatter was correctly implemented
-    fn scatter(&self, r: Ray, hit: &HitRecord) -> Option<(Ray, Color)> {
+    fn scatter(&self, r: Ray, hit: &VisibleHit) -> Option<(Ray, Color)> {
         let attenuation = Color::new(1.0, 1.0, 1.0);
         let eta_ratio = if hit.front_face {
             1.0 / self.ior

@@ -5,7 +5,7 @@ use crate::{
     material::Material,
 };
 
-pub struct HitRecord {
+pub struct VisibleHit {
     pub point: Point<f64>,
     pub normal: Vec3<f64>,
     pub t: f64,
@@ -19,7 +19,7 @@ pub struct HitRecord {
     _force_new: (),
 }
 
-impl HitRecord {
+impl VisibleHit {
     pub fn new(
         r: Ray,
         point: Point<f64>,
@@ -41,36 +41,36 @@ impl HitRecord {
     }
 }
 
-pub trait Hit: Sync + Send {
-    fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord>;
+pub trait Visible: Sync {
+    fn bounce(&self, r: Ray, t_range: Range<f64>) -> Option<VisibleHit>;
 }
 
 /// Stores a list of references to Hit objects
-pub struct HittableList {
-    objects: Vec<Box<dyn Hit>>,
+pub struct VisibleList {
+    objects: Vec<Box<dyn Visible>>,
 }
 
-impl HittableList {
+impl VisibleList {
     pub fn new() -> Self {
         Self {
             objects: Vec::new(),
         }
     }
 
-    pub fn add(&mut self, object: Box<dyn Hit>) {
+    pub fn add(&mut self, object: Box<dyn Visible>) {
         self.objects.push(object);
     }
 }
 
-impl Hit for HittableList {
+impl Visible for VisibleList {
     /// Returns the closest hit from hitting all elements in the list
-    fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord> {
+    fn bounce(&self, r: Ray, t_range: Range<f64>) -> Option<VisibleHit> {
         let mut closest_t = t_range.end;
 
         self.objects
             .iter()
             .filter_map(|x| {
-                let hit = x.hit(r, t_range.start..closest_t);
+                let hit = x.bounce(r, t_range.start..closest_t);
 
                 if let Some(ref record) = hit {
                     closest_t = f64::min(closest_t, record.t);

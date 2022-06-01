@@ -1,7 +1,7 @@
 use crate::{
     color::Color,
     geometry::{Ray, Vec3},
-    object::HitRecord,
+    object::VisibleHit,
 };
 
 use super::Material;
@@ -21,7 +21,7 @@ impl Metal {
 }
 
 impl Material for Metal {
-    fn scatter(&self, r: Ray, hit: &HitRecord) -> Option<(Ray, Color)> {
+    fn scatter(&self, r: Ray, hit: &VisibleHit) -> Option<(Ray, Color)> {
         let reflected = r.direction().reflect(hit.normal);
         let attenuation = self.albedo;
 

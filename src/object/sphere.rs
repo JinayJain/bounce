@@ -5,7 +5,7 @@ use crate::{
     material::Material,
 };
 
-use super::{Hit, HitRecord};
+use super::{Visible, VisibleHit};
 
 pub struct Sphere {
     center: Point<f64>,
@@ -23,8 +23,8 @@ impl Sphere {
     }
 }
 
-impl Hit for Sphere {
-    fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<HitRecord> {
+impl Visible for Sphere {
+    fn bounce(&self, r: Ray, t_range: Range<f64>) -> Option<VisibleHit> {
         let direction = r.direction();
         let ray_origin = r.origin();
 
@@ -51,7 +51,7 @@ impl Hit for Sphere {
 
         let hit_point = r.at(root);
 
-        Some(HitRecord::new(
+        Some(VisibleHit::new(
             r,
             hit_point,
             Vec3::from(hit_point - self.center) / self.radius,

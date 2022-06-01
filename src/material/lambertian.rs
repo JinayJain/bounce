@@ -1,7 +1,7 @@
 use crate::{
     color::Color,
     geometry::{Ray, Vec3},
-    object::HitRecord,
+    object::VisibleHit,
 };
 
 use super::Material;
@@ -17,7 +17,7 @@ impl Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, _r: Ray, hit: &HitRecord) -> Option<(Ray, Color)> {
+    fn scatter(&self, _r: Ray, hit: &VisibleHit) -> Option<(Ray, Color)> {
         let scatter_dir = hit.normal + Vec3::random_unit();
         let scattered = if scatter_dir.near_zero() {
             // Prevent cases where the ray bounce is 0, leading to NaN/infinites
