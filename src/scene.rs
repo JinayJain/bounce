@@ -8,7 +8,10 @@ use crate::{
     geometry::{Point, Ray, Vec3},
     image::Image,
     material::{Dielectric, Lambertian, Material, Metal},
-    object::{InfinitePlane, Sphere, Tri, Visible, VisibleList},
+    object::{
+        bvh::{BvhTree, Primitive},
+        InfinitePlane, Sphere, Tri, Visible, VisibleList,
+    },
     sky::{Sky, Uniform},
 };
 
@@ -29,38 +32,40 @@ let sphere = scene.sphere(Point::new(0.0, 0.0, -1.0), 0.5, diffuse);
 const HIT_TOLERANCE: f64 = 0.0001;
 
 pub struct Scene {
-    objects: VisibleList,
+    primitives: Vec<Arc<dyn Primitive>>,
     camera: Camera,
     sky: Box<dyn Sky>,
     show_progress: bool,
 }
 
+type PrimArc = Arc<dyn Primitive>;
 impl Scene {
     pub fn new() -> Self {
         Self {
-            objects: VisibleList::new(),
+            // objects: VisibleList::new(),
+            primitives: Vec::new(),
             camera: Camera::default(),
             sky: Box::new(Uniform::new(Color::white())),
             show_progress: true,
         }
     }
 
-    pub fn add(&mut self, object: impl Visible + 'static) {
-        self.objects.add(Box::new(object));
-    }
+    // pub fn add(&mut self, object: impl Visible + 'static) {
+    //     self.objects.add(Box::new(object));
+    // }
 
-    pub fn sphere(&mut self, center: Point<f64>, radius: f64, material: &Arc<dyn Material>) {
-        self.objects
-            .add(Box::new(Sphere::new(center, radius, material.clone())));
-    }
+    // pub fn sphere(&mut self, center: Point<f64>, radius: f64, material: &Arc<dyn Material>) {
+    //     self.objects
+    //         .add(Box::new(Sphere::new(center, radius, material.clone())));
+    // }
 
-    pub fn plane(&mut self, origin: Point<f64>, normal: Vec3<f64>, material: &Arc<dyn Material>) {
-        self.objects.add(Box::new(InfinitePlane::new(
-            origin,
-            normal,
-            Arc::clone(material),
-        )))
-    }
+    // pub fn plane(&mut self, origin: Point<f64>, normal: Vec3<f64>, material: &Arc<dyn Material>) {
+    //     self.objects.add(Box::new(InfinitePlane::new(
+    //         origin,
+    //         normal,
+    //         Arc::clone(material),
+    //     )))
+    // }
 
     pub fn triangle(
         &mut self,
@@ -69,8 +74,8 @@ impl Scene {
         c: Point<f64>,
         material: &Arc<dyn Material>,
     ) {
-        self.objects
-            .add(Box::new(Tri::new(a, b, c, Arc::clone(material))))
+        let tri: PrimArc = Arc::new(Tri::new(a, b, c, Arc::clone(material)));
+        self.primitives.push(tri);
     }
 
     pub fn diffuse_material(&mut self, color: Color) -> Arc<dyn Material> {
@@ -121,6 +126,9 @@ impl Scene {
     }
 
     pub fn render(&self, image: &mut Image, samples_per_pixel: u32, max_depth: u32) {
+        // explicitly cloning the Arc references to the primitives
+        let bvh = BvhTree::build(self.primitives.iter().map(|arc| Arc::clone(arc)).collect());
+
         let width = image.width();
         let height = image.height();
 
@@ -144,7 +152,7 @@ impl Scene {
 
                 let r = self.camera.ray_at(u, v);
 
-                color += self.ray_color(r, max_depth);
+                color += self.ray_color(r, max_depth, &bvh);
             }
 
             let scale = 1.0 / (samples_per_pixel as f64);
@@ -161,14 +169,14 @@ impl Scene {
         });
     }
 
-    fn ray_color(&self, r: Ray, depth: u32) -> Color {
+    fn ray_color(&self, r: Ray, depth: u32, bvh: &BvhTree) -> Color {
         if depth <= 0 {
             return Color::new(0.0, 0.0, 0.0);
         }
 
-        if let Some(hit) = self.objects.bounce(r, HIT_TOLERANCE..f64::INFINITY) {
+        if let Some(hit) = bvh.bounce(r, &(HIT_TOLERANCE..f64::INFINITY)) {
             if let Some((scattered, attenuation)) = hit.material.scatter(r, &hit) {
-                return attenuation * self.ray_color(scattered, depth - 1);
+                return attenuation * self.ray_color(scattered, depth - 1, bvh);
             }
 
             return Color::new(0.0, 0.0, 0.0);

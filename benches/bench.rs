@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use bounce::{color::Color, geometry::Point, image::Image, scene::Scene};
+use bounce::{color::Color, image::Image, scene::Scene};
 
 fn bench_sphere(c: &mut Criterion) {
     let mut scene = Scene::new();
@@ -8,8 +8,8 @@ fn bench_sphere(c: &mut Criterion) {
     let ground_material = scene.diffuse_material(Color::new(0.8, 0.2, 0.1));
     let sphere_material = scene.metal_material(Color::new(0.5, 0.5, 0.1), 0.3);
 
-    scene.sphere(Point::new(0.0, 0.0, -1.0), 0.5, &sphere_material);
-    scene.sphere(Point::new(0.0, -100.5, -1.0), 100.0, &ground_material);
+    // scene.sphere(Point::new(0.0, 0.0, -1.0), 0.5, &sphere_material);
+    // scene.sphere(Point::new(0.0, -100.5, -1.0), 100.0, &ground_material);
 
     scene.progress(false);
 

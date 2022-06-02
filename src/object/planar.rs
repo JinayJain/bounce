@@ -5,7 +5,10 @@ use crate::{
     material::Material,
 };
 
-use super::{Visible, VisibleHit};
+use super::{
+    bvh::{Bounded, BoundingBox, Primitive},
+    Visible, VisibleHit,
+};
 
 pub struct InfinitePlane {
     normal: Vec3<f64>,
@@ -25,7 +28,7 @@ impl InfinitePlane {
 }
 
 impl Visible for InfinitePlane {
-    fn bounce(&self, r: Ray, t_range: Range<f64>) -> Option<VisibleHit> {
+    fn bounce(&self, r: Ray, t_range: &Range<f64>) -> Option<VisibleHit> {
         let denom = self.normal.dot(r.direction());
 
         // ray direction is parallel to the plane
@@ -71,7 +74,7 @@ impl Tri {
 
 const EPSILON: f64 = 1e-8;
 impl Visible for Tri {
-    fn bounce(&self, r: Ray, t_range: Range<f64>) -> Option<VisibleHit> {
+    fn bounce(&self, r: Ray, t_range: &Range<f64>) -> Option<VisibleHit> {
         // implementation of the Möller–Trumbore ray-triangle intersection algorithm
         // variable names taken from the original paper: https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
 
@@ -116,3 +119,29 @@ impl Visible for Tri {
         }
     }
 }
+
+impl Bounded for Tri {
+    fn bbox(&self) -> BoundingBox {
+        BoundingBox::from_points(&self.vertices).unwrap()
+    }
+
+    fn surface_area(&self) -> f64 {
+        let (a, b, c) = (self.vertices[0], self.vertices[1], self.vertices[2]);
+
+        Vec3::from(b - a).cross(Vec3::from(c - a)).len().abs() / 2.0
+    }
+
+    fn centroid(&self) -> Point<f64> {
+        let inv = 1.0 / self.vertices.len() as f64;
+        let normalize = Point::new(inv, inv, inv);
+
+        self.vertices
+            .clone()
+            .into_iter()
+            .reduce(|acc, item| acc + item)
+            .unwrap()
+            * normalize
+    }
+}
+
+impl Primitive for Tri {}

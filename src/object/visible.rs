@@ -42,7 +42,7 @@ impl VisibleHit {
 }
 
 pub trait Visible: Sync {
-    fn bounce(&self, r: Ray, t_range: Range<f64>) -> Option<VisibleHit>;
+    fn bounce(&self, r: Ray, t_range: &Range<f64>) -> Option<VisibleHit>;
 }
 
 /// Stores a list of references to Hit objects
@@ -64,13 +64,13 @@ impl VisibleList {
 
 impl Visible for VisibleList {
     /// Returns the closest hit from hitting all elements in the list
-    fn bounce(&self, r: Ray, t_range: Range<f64>) -> Option<VisibleHit> {
+    fn bounce(&self, r: Ray, t_range: &Range<f64>) -> Option<VisibleHit> {
         let mut closest_t = t_range.end;
 
         self.objects
             .iter()
             .filter_map(|x| {
-                let hit = x.bounce(r, t_range.start..closest_t);
+                let hit = x.bounce(r, &(t_range.start..closest_t));
 
                 if let Some(ref record) = hit {
                     closest_t = f64::min(closest_t, record.t);

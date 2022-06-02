@@ -24,7 +24,7 @@ impl Sphere {
 }
 
 impl Visible for Sphere {
-    fn bounce(&self, r: Ray, t_range: Range<f64>) -> Option<VisibleHit> {
+    fn bounce(&self, r: Ray, t_range: &Range<f64>) -> Option<VisibleHit> {
         let direction = r.direction();
         let ray_origin = r.origin();
 

@@ -36,7 +36,7 @@ impl Object {
 }
 
 impl Visible for Object {
-    fn bounce(&self, r: Ray, t_range: Range<f64>) -> Option<VisibleHit> {
+    fn bounce(&self, r: Ray, t_range: &Range<f64>) -> Option<VisibleHit> {
         self.triangles.bounce(r, t_range)
     }
 }

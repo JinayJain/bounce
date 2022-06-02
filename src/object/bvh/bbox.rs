@@ -2,7 +2,9 @@
 
 use std::ops::{Add, AddAssign, Range};
 
-use crate::geometry::Ray;
+use crate::geometry::{Point, Ray};
+
+use super::Intersect;
 
 #[derive(Debug, Clone)]
 pub struct BoundingBox {
@@ -14,6 +16,12 @@ pub struct BoundingBox {
 impl BoundingBox {
     pub fn new(x: Range<f64>, y: Range<f64>, z: Range<f64>) -> Self {
         Self { x, y, z }
+    }
+
+    pub fn from_points(pts: &[Point<f64>]) -> Option<Self> {
+        pts.iter()
+            .map(|pt| Self::new(pt.x()..pt.x(), pt.y()..pt.y(), pt.z()..pt.z()))
+            .reduce(|acc, item| acc + item)
     }
 
     pub fn x(&self) -> Range<f64> {
@@ -88,33 +96,30 @@ fn solve_axis(origin: f64, rate: f64, axis_range: &Range<f64>) -> Option<Range<f
 }
 
 macro_rules! unwrap_or_return {
-    ($e: expr) => {
+    ($e: expr, $ret: expr) => {
         match $e {
             Some(x) => x,
-            None => return None,
+            None => return $ret,
         }
     };
 }
 
-impl BoundingBox {
-    pub fn hit(&self, r: Ray, t_range: Range<f64>) -> Option<f64> {
+impl Intersect for BoundingBox {
+    fn intersect(&self, r: Ray, t_range: &Range<f64>) -> Option<f64> {
         let t_range_x = solve_axis(r.origin().x(), r.direction().x(), &self.x);
         let t_range_y = solve_axis(r.origin().y(), r.direction().y(), &self.y);
         let t_range_z = solve_axis(r.origin().z(), r.direction().z(), &self.z);
 
-        let t_range_x = unwrap_or_return!(t_range_x);
-        let t_range_y = unwrap_or_return!(t_range_y);
-        let t_range_z = unwrap_or_return!(t_range_z);
+        let t_range_x = unwrap_or_return!(t_range_x, None);
+        let t_range_y = unwrap_or_return!(t_range_y, None);
+        let t_range_z = unwrap_or_return!(t_range_z, None);
 
         // combine all possible range of t to find the t's that satify all
         let combined = intersection(&t_range_x, &t_range_y)
             .and_then(|combined| intersection(&combined, &t_range_z))
             .and_then(|combined| intersection(&combined, &t_range));
 
-        let combined = unwrap_or_return!(combined);
-
-        let t = combined.start;
-        Some(t)
+        combined.and_then(|range| Some(range.start))
     }
 }
 
