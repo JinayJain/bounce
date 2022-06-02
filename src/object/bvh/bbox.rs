@@ -18,10 +18,15 @@ impl BoundingBox {
         Self { x, y, z }
     }
 
-    pub fn from_points(pts: &[Point<f64>]) -> Option<Self> {
+    pub fn empty() -> Self {
+        Self::new(0.0..0.0, 0.0..0.0, 0.0..0.0)
+    }
+
+    pub fn from_points(pts: &[Point<f64>]) -> Self {
         pts.iter()
             .map(|pt| Self::new(pt.x()..pt.x(), pt.y()..pt.y(), pt.z()..pt.z()))
             .reduce(|acc, item| acc + item)
+            .unwrap_or(BoundingBox::empty())
     }
 
     pub fn x(&self) -> Range<f64> {
@@ -95,24 +100,11 @@ fn solve_axis(origin: f64, rate: f64, axis_range: &Range<f64>) -> Option<Range<f
     Some(start..end)
 }
 
-macro_rules! unwrap_or_return {
-    ($e: expr, $ret: expr) => {
-        match $e {
-            Some(x) => x,
-            None => return $ret,
-        }
-    };
-}
-
 impl Intersect for BoundingBox {
     fn intersect(&self, r: Ray, t_range: &Range<f64>) -> Option<f64> {
-        let t_range_x = solve_axis(r.origin().x(), r.direction().x(), &self.x);
-        let t_range_y = solve_axis(r.origin().y(), r.direction().y(), &self.y);
-        let t_range_z = solve_axis(r.origin().z(), r.direction().z(), &self.z);
-
-        let t_range_x = unwrap_or_return!(t_range_x, None);
-        let t_range_y = unwrap_or_return!(t_range_y, None);
-        let t_range_z = unwrap_or_return!(t_range_z, None);
+        let t_range_x = solve_axis(r.origin().x(), r.direction().x(), &self.x)?;
+        let t_range_y = solve_axis(r.origin().y(), r.direction().y(), &self.y)?;
+        let t_range_z = solve_axis(r.origin().z(), r.direction().z(), &self.z)?;
 
         // combine all possible range of t to find the t's that satify all
         let combined = intersection(&t_range_x, &t_range_y)

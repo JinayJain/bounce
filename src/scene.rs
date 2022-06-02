@@ -58,10 +58,7 @@ impl Scene {
     pub fn object(&mut self, path: impl Into<PathBuf>, material: &Arc<dyn Material>) {
         let obj = Object::new(path, Arc::clone(material)).expect("Unable to open object file");
         let mut prims = obj.to_primitives();
-
-        dbg!(self.primitives.len());
         self.primitives.append(&mut prims);
-        dbg!(self.primitives.len());
     }
 
     pub fn sphere(&mut self, center: Point<f64>, radius: f64, material: &Arc<dyn Material>) {
@@ -139,6 +136,8 @@ impl Scene {
         // explicitly cloning the Arc references to the primitives
         let bvh = BvhTree::build(self.primitives.iter().map(|arc| Arc::clone(arc)).collect());
 
+        // bvh.print();
+
         let width = image.width();
         let height = image.height();
 
@@ -147,7 +146,8 @@ impl Scene {
             pb.set_style(ProgressStyle::default_bar().template(
                 "[{elapsed_precise}] {wide_bar} ({percent}%) [{pos}px / {len}px ({per_sec})]",
             ));
-            pb.set_draw_delta((width * height / 100) as u64);
+            // pb.set_draw_delta((width * height / 100) as u64);
+            pb.set_draw_delta(1000);
 
             Some(pb)
         } else {

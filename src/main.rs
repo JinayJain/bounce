@@ -47,12 +47,29 @@ fn main() -> io::Result<()> {
 
     let mut scene = Scene::new();
 
-    make_triangles(500, &mut scene);
+    make_triangles(120_000, &mut scene);
 
-    // let teapot_mat = scene.metal_material(Color::new(1.0, 1.0, 1.0), 0.1);
-    // scene.object("files/teapot.obj", &teapot_mat);
+    let metal = scene.metal_material(Color::new(1.0, 1.0, 1.0), 0.3);
+    let diffuse = scene.diffuse_material(Color::new(1.0, 0.0, 1.0));
+    let glass = scene.dielectric_material(1.5);
+    // scene.object("files/teapot.obj", &diffuse);
 
-    let look_from = Point::new(0.0, 0.0, 20.0);
+    let plane_mat = scene.diffuse_material(Color::new(0.2, 0.2, 0.01));
+    // scene.plane(
+    //     Point::new(0.0, 0.0, 0.0),
+    //     Vec3::new(0.0, 1.0, 0.0),
+    //     &plane_mat,
+    // );
+
+    // scene.sphere(Point::new(3.0, 0.0, 2.0), 0.5, &tri_mat);
+    // scene.triangle(
+    //     Point::new(5.0, 0.0, 0.0),
+    //     Point::new(0.0, 0.0, 0.0),
+    //     Point::new(0.0, 3.0, 0.0),
+    //     &teapot_mat,
+    // );
+
+    let look_from = Point::new(3.0, 3.0, 10.0);
     let look_at = Point::new(0.0, 1.0, 0.0);
     let focus_dist = Vec3::from(look_at - look_from).len();
 
@@ -77,18 +94,32 @@ fn main() -> io::Result<()> {
 }
 
 fn make_triangles(num: usize, scene: &mut Scene) {
-    let mat = scene.metal_material(Color::new(0.3, 0.3, 0.8), 0.3);
+    let diffuse = scene.diffuse_material(Color::new(0.0, 0.3, 0.8));
+    let metal = scene.metal_material(Color::new(0.3, 0.2, 0.0), 0.5);
+    let glass = scene.dielectric_material(1.5);
 
     let mut rng = thread_rng();
+    let a = Point::new(0.0, 0.0, 0.0);
+    let b = Point::new(1.0, 0.0, 0.0);
+    let c = Point::new(0.0, 1.0, 0.0);
     let coord_range = -10.0..10.0;
     for _ in 0..num {
         let offset = Point::new(
             rng.gen_range(coord_range.clone()),
-            rng.gen_range(coord_range.clone()),
+            0.0,
             rng.gen_range(coord_range.clone()),
         );
 
+        let mat = {
+            let num: f64 = rng.gen();
+
+            match num {
+                num if num < 0.33 => &diffuse,
+                num if num < 0.66 => &metal,
+                _ => &glass,
+            }
+        };
         // scene.triangle(a + offset, b + offset, c + offset, &mat);
-        scene.sphere(offset, 0.5, &mat);
+        scene.sphere(offset, 0.2, mat);
     }
 }

@@ -13,7 +13,7 @@ use crate::{
     object::Tri,
 };
 
-use super::{bvh::Primitive, Visible, VisibleHit, VisibleList};
+use super::bvh::Primitive;
 
 pub struct Object {
     triangles: Vec<Tri>,

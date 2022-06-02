@@ -1,4 +1,4 @@
-use std::{ops::Range, sync::Arc};
+use std::{fmt::Display, ops::Range, sync::Arc};
 
 use crate::{
     geometry::{Point, Ray},
@@ -88,49 +88,141 @@ impl BvhTree {
         Self { root }
     }
 
-    fn hit_node(&self, node: &BvhNode, r: Ray, t_range: &Range<f64>) -> Option<VisibleHit> {
-        match node {
+    pub fn print(&self) {
+        self.root.print(0);
+    }
+}
+
+impl Visible for BvhTree {
+    fn bounce(&self, r: Ray, t_range: &Range<f64>) -> Option<VisibleHit> {
+        self.root.bounce(r, t_range)
+    }
+}
+
+fn containing_bbox(items: &[Arc<dyn Primitive>]) -> BoundingBox {
+    items
+        .iter()
+        .map(|p| p.bbox())
+        .reduce(|acc, item| acc + item)
+        .unwrap_or(BoundingBox::empty())
+}
+
+struct Bucket {
+    count: u32,
+    bbox: Option<BoundingBox>,
+}
+
+struct PrimitiveInfo {
+    primitive: Arc<dyn Primitive>,
+    centroid: Point<f64>,
+    bbox: BoundingBox,
+}
+
+enum Axis {
+    X,
+    Y,
+    Z,
+}
+
+impl Axis {
+    fn of(&self, p: &Point<f64>) -> f64 {
+        match self {
+            Axis::X => p.x(),
+            Axis::Y => p.y(),
+            Axis::Z => p.z(),
+        }
+    }
+}
+impl Display for Axis {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            Axis::X => "X",
+            Axis::Y => "Y",
+            Axis::Z => "Z",
+        };
+
+        write!(f, "{}", name)
+    }
+}
+
+struct Split {
+    axis: Axis,
+    threshold: f64,
+    cost: f64,
+}
+
+impl Split {
+    fn partition(
+        &self,
+        items: Vec<PrimitiveInfo>,
+    ) -> (Vec<Arc<dyn Primitive>>, Vec<Arc<dyn Primitive>>) {
+        let (left, right): (Vec<_>, Vec<_>) = items
+            .into_iter()
+            .partition(|item| self.axis.of(&item.centroid) < self.threshold);
+
+        let left = left
+            .into_iter()
+            .map(|prim_info| prim_info.primitive)
+            .collect();
+        let right = right
+            .into_iter()
+            .map(|prim_info| prim_info.primitive)
+            .collect();
+
+        (left, right)
+    }
+}
+
+const NUM_BUCKETS: usize = 64;
+const COST_TRAVERSAL: f64 = 1.0 / 2.0;
+const MAX_PRIMS_PER_NODE: usize = 5;
+// const COST_TRAVERSAL: f64 = f64::INFINITY;
+// const MAX_PRIMS_PER_NODE: usize = 5;
+
+impl Visible for BvhNode {
+    fn bounce(&self, r: Ray, t_range: &Range<f64>) -> Option<VisibleHit> {
+        self.intersect(r, t_range)?;
+
+        match self {
             BvhNode::Inner(inner) => {
-                let left_intersect = inner.left.intersect(r, t_range);
-                let right_intersect = inner.right.intersect(r, t_range);
+                let (left_t, right_t) = (
+                    inner.left.intersect(r, t_range),
+                    inner.right.intersect(r, t_range),
+                );
 
-                match left_intersect {
-                    Some(left_t) => match right_intersect {
-                        Some(right_t) => {
-                            let (first, first_t, second, second_t) = if left_t < right_t {
-                                (&inner.left, left_t, &inner.right, right_t)
-                            } else {
-                                (&inner.right, right_t, &inner.left, left_t)
-                            };
+                match (left_t, right_t) {
+                    (Some(left_t), Some(right_t)) => {
+                        let (first, first_t, second, second_t) = if left_t < right_t {
+                            (&inner.left, left_t, &inner.right, right_t)
+                        } else {
+                            (&inner.right, right_t, &inner.left, left_t)
+                        };
 
-                            let mut best_hit = self.hit_node(&first, r, &(first_t..t_range.end));
-                            let first_t = best_hit.as_ref().and_then(|hit| Some(hit.t));
+                        let closest_hit = first.bounce(r, t_range);
 
-                            if first_t.is_none() || first_t.unwrap() > second_t {
-                                let second_hit =
-                                    self.hit_node(&second, r, &(second_t..t_range.end));
+                        match closest_hit {
+                            Some(hit) => {
+                                let mut best_hit = hit;
 
-                                let second_t = second_hit.as_ref().and_then(|hit| Some(hit.t));
-
-                                if let Some(new_t) = second_t {
-                                    if first_t.is_none() || first_t.unwrap() > new_t {
-                                        best_hit = second_hit;
+                                if best_hit.t >= second_t {
+                                    if let Some(second_hit) = second.bounce(r, t_range) {
+                                        if best_hit.t > second_hit.t {
+                                            best_hit = second_hit;
+                                        }
                                     }
                                 }
-                            }
 
-                            best_hit
+                                Some(best_hit)
+                            }
+                            None => second.bounce(r, t_range),
                         }
-                        None => self.hit_node(&inner.left, r, &(left_t..t_range.end)),
-                    },
-                    None => match right_intersect {
-                        Some(right_t) => self.hit_node(&inner.right, r, &(right_t..t_range.end)),
-                        None => None,
-                    },
+                    }
+                    (Some(left_t), None) => inner.left.bounce(r, t_range),
+                    (None, Some(right_t)) => inner.right.bounce(r, t_range),
+                    _ => None,
                 }
             }
             BvhNode::Leaf(leaf) => {
-                // (visible) hit all primitives in the leaf
                 let mut closest_t = t_range.end;
 
                 leaf.primitives
@@ -150,148 +242,148 @@ impl BvhTree {
     }
 }
 
-impl Visible for BvhTree {
-    fn bounce(&self, r: Ray, t_range: &Range<f64>) -> Option<VisibleHit> {
-        self.hit_node(&self.root, r, t_range)
-    }
-}
-
-#[derive(Debug)]
-struct Bucket {
-    count: u32,
-    bbox: Option<BoundingBox>,
-}
-
-fn full_bbox(items: &[Arc<dyn Primitive>]) -> Option<BoundingBox> {
-    items
-        .iter()
-        .map(|p| p.bbox())
-        .reduce(|acc, item| acc + item)
-}
-
-fn get_bucket(value: f64, bucket_size: f64, buckets_start: f64, num_buckets: usize) -> usize {
-    let idx = ((value - buckets_start) / bucket_size) as usize;
-
-    idx.max(0).min(num_buckets - 1)
-}
-
-const NUM_BUCKETS: usize = 8;
-const COST_TRAVERSAL: f64 = 1.0 / 16.0;
-const MAX_PRIMS_PER_NODE: usize = 5;
-
 impl BvhNode {
-    // FIXME: fails on empty lists
+    fn print(&self, offset: usize) {
+        let gap = "\t".repeat(offset);
+        print!("{}", gap);
+
+        match self {
+            BvhNode::Inner(inner) => {
+                println!(
+                    "Inner (split on {} at {})",
+                    inner.split.axis, inner.split.threshold
+                );
+
+                inner.left.print(offset + 1);
+                inner.right.print(offset + 1);
+            }
+            BvhNode::Leaf(leaf) => println!("Leaf ({})", leaf.primitives.len()),
+        }
+    }
+
     // FIXME: fails on equal centroids
 
-    fn build(primitives: Vec<Arc<dyn Primitive>>) -> Self {
-        let full_bbox =
-            full_bbox(&primitives).expect("Failed to create combined bounding box for slice");
+    fn find_best_split(primitives: &Vec<PrimitiveInfo>, axis: Axis) -> Option<Split> {
+        let centroids = primitives.iter().map(|p| axis.of(&p.centroid));
+        let centroid_bounds = centroids
+            .map(|cent| cent..cent)
+            .reduce(|acc, item| acc.start.min(item.start)..acc.end.max(item.end))?;
 
-        if primitives.len() == 1 {
-            return BvhNode::Leaf(BvhLeaf {
-                bbox: full_bbox,
-                primitives,
-            });
-        }
-
-        // TODO: do for axes other than x
-
-        let x_range = full_bbox.x();
-
-        let mut buckets = Vec::new();
-        let bucket_size = (x_range.end - x_range.start) / (NUM_BUCKETS as f64);
-
-        for _ in 0..NUM_BUCKETS {
-            buckets.push(Bucket {
+        let mut buckets: Vec<_> = (0..NUM_BUCKETS)
+            .map(|_| Bucket {
                 bbox: None,
                 count: 0,
-            });
-        }
+            })
+            .collect();
 
+        let bucket_size = (centroid_bounds.end - centroid_bounds.start) / (NUM_BUCKETS as f64);
+
+        // assign each primitive to a bucket
         for prim in primitives.iter() {
-            let centroid = prim.centroid();
+            let coord = axis.of(&prim.centroid);
 
-            assert!(centroid.x() >= x_range.start);
-            assert!(centroid.x() <= x_range.end);
-
-            // Epsilon makes sure the bucket_idx is within 0 <= b < NUM_BUCKETS
-            let bucket_idx = get_bucket(centroid.x(), bucket_size, x_range.start, NUM_BUCKETS);
-            let bucket = &mut buckets[bucket_idx];
-
-            bucket.count += 1;
-
-            if let Some(ref mut bbox) = bucket.bbox {
-                *bbox += prim.bbox();
-            } else {
-                bucket.bbox = Some(prim.bbox());
+            let mut b = ((coord - centroid_bounds.start) / bucket_size).floor() as usize;
+            if b == buckets.len() {
+                b -= 1;
             }
+
+            buckets[b].bbox = match &buckets[b].bbox {
+                Some(bbox) => Some(bbox.clone() + prim.bbox.clone()),
+                None => Some(prim.bbox.clone()),
+            };
+            buckets[b].count += 1;
         }
 
+        // consider all splits
+        let mut best_threshold = None;
         let mut best_cost = f64::INFINITY;
-        let mut best_split = None;
 
-        for split_idx in 0..(NUM_BUCKETS - 1) {
-            let mut left_cnt = 0;
-            let left_bbox = &buckets[..=split_idx]
+        for split_idx in 0..(buckets.len() - 1) {
+            let left_buckets = &buckets[..=split_idx];
+            let right_buckets = &buckets[(split_idx + 1)..];
+
+            let left_bbox = left_buckets
                 .iter()
-                .filter_map(|b| {
-                    left_cnt += b.count;
-                    b.bbox.clone()
-                })
-                .reduce(|acc, item| acc + item);
-
-            let mut right_cnt = 0;
-            let right_bbox = &buckets[(split_idx + 1)..]
+                .filter_map(|b| b.bbox.clone())
+                .reduce(|acc, bbox| acc + bbox);
+            let right_bbox = right_buckets
                 .iter()
-                .filter_map(|b| {
-                    right_cnt += b.count;
-                    b.bbox.clone()
-                })
-                .reduce(|acc, item| acc + item);
+                .filter_map(|b| b.bbox.clone())
+                .reduce(|acc, bbox| acc + bbox);
 
-            if left_cnt == 0 || right_cnt == 0 {
-                continue;
-            }
+            let left_count: u32 = left_buckets.iter().map(|b| b.count).sum();
+            let right_count: u32 = right_buckets.iter().map(|b| b.count).sum();
 
-            let left_bbox = left_bbox.as_ref().unwrap();
-            let right_bbox = right_bbox.as_ref().unwrap();
+            match (left_bbox, right_bbox) {
+                (Some(left_bbox), Some(right_bbox)) => {
+                    let left_sa = left_bbox.surface_area();
+                    let right_sa = right_bbox.surface_area();
 
-            let cost = COST_TRAVERSAL
-                + (left_bbox.surface_area() * (left_cnt as f64)
-                    + right_bbox.surface_area() * (right_cnt as f64))
-                    / full_bbox.surface_area();
+                    let split_cost = COST_TRAVERSAL
+                        + (left_count as f64 * left_sa)
+                        + (right_count as f64 * right_sa);
 
-            if cost < best_cost {
-                best_cost = cost;
-                best_split = Some(bucket_size * ((split_idx + 1) as f64) + x_range.start);
-            }
+                    if split_cost < best_cost {
+                        best_cost = split_cost;
+                        best_threshold =
+                            Some(centroid_bounds.start + ((split_idx + 1) as f64 * bucket_size));
+                    }
+                }
+                _ => continue,
+            };
         }
 
-        let leaf_cost: f64 = buckets.iter().map(|b| b.count).sum::<u32>() as f64;
+        Some(Split {
+            axis,
+            threshold: best_threshold?,
+            cost: best_cost,
+        })
+    }
 
-        if best_split.is_some() && (primitives.len() > MAX_PRIMS_PER_NODE || leaf_cost > best_cost)
-        {
-            let (left_prims, right_prims): (Vec<_>, Vec<_>) = primitives
-                .into_iter()
-                .partition(|prim| prim.centroid().x() < best_split.unwrap());
+    fn build(primitives: Vec<Arc<dyn Primitive>>) -> Self {
+        let containing_bbox = containing_bbox(&primitives);
 
-            println!("best split: {}", best_split.unwrap());
-            println!("{:?}", &x_range);
-            println!("{}, {}", left_prims.len(), right_prims.len());
-
-            let left = Arc::new(BvhNode::build(left_prims));
-            let right = Arc::new(BvhNode::build(right_prims));
-
-            BvhNode::Inner(BvhInner {
-                bbox: full_bbox,
-                left,
-                right,
+        // precompute the computations needed for primitives
+        let primitive_info: Vec<_> = primitives
+            .into_iter()
+            .map(|prim| PrimitiveInfo {
+                bbox: prim.bbox(),
+                centroid: prim.centroid(),
+                primitive: prim,
             })
-        } else {
-            BvhNode::Leaf(BvhLeaf {
-                bbox: full_bbox,
-                primitives,
-            })
+            .collect();
+
+        let split_candidates = vec![
+            BvhNode::find_best_split(&primitive_info, Axis::X),
+            BvhNode::find_best_split(&primitive_info, Axis::Y),
+            BvhNode::find_best_split(&primitive_info, Axis::Z),
+        ];
+
+        // choose the axis with the lowest cost, or all might be none
+        let best_split = split_candidates
+            .into_iter()
+            .filter_map(|s| s)
+            .reduce(|acc, split| if acc.cost > split.cost { split } else { acc });
+
+        let leaf_cost = primitive_info.len() as f64;
+        match best_split {
+            Some(split) if split.cost < leaf_cost || primitive_info.len() > MAX_PRIMS_PER_NODE => {
+                let (left, right) = split.partition(primitive_info);
+
+                let left_child = BvhNode::build(left);
+                let right_child = BvhNode::build(right);
+
+                BvhNode::Inner(BvhInner {
+                    bbox: containing_bbox,
+                    split,
+                    left: Arc::new(left_child),
+                    right: Arc::new(right_child),
+                })
+            }
+            _ => BvhNode::Leaf(BvhLeaf {
+                bbox: containing_bbox,
+                primitives: primitive_info.into_iter().map(|p| p.primitive).collect(),
+            }),
         }
     }
 }
@@ -312,6 +404,7 @@ impl Intersect for BvhNode {
 
 struct BvhInner {
     bbox: BoundingBox,
+    split: Split,
     left: Arc<BvhNode>,
     right: Arc<BvhNode>,
 }
@@ -319,34 +412,4 @@ struct BvhInner {
 struct BvhLeaf {
     bbox: BoundingBox,
     primitives: Vec<Arc<dyn Primitive>>,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::get_bucket;
-
-    #[test]
-    fn bucket_selection() {
-        let bucket_size = 1.0;
-        let buckets_start = -3.0;
-        let num_buckets = 4;
-
-        assert_eq!(
-            get_bucket(buckets_start, bucket_size, buckets_start, num_buckets),
-            0
-        );
-
-        assert_eq!(get_bucket(-2.6, bucket_size, buckets_start, num_buckets), 0);
-        assert_eq!(get_bucket(-1.3, bucket_size, buckets_start, num_buckets), 1);
-        assert_eq!(
-            get_bucket(-0.35, bucket_size, buckets_start, num_buckets),
-            2
-        );
-        assert_eq!(
-            get_bucket(0.439, bucket_size, buckets_start, num_buckets),
-            3
-        );
-
-        assert_eq!(get_bucket(1.0, bucket_size, buckets_start, num_buckets), 3);
-    }
 }

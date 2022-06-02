@@ -70,7 +70,7 @@ impl Bounded for Sphere {
         let first = Point::new(self.radius, self.radius, self.radius);
         let second = -first;
 
-        BoundingBox::from_points(&[first + center, second + center]).unwrap()
+        BoundingBox::from_points(&[first + center, second + center])
     }
 
     fn surface_area(&self) -> f64 {
