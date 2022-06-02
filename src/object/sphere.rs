@@ -5,7 +5,10 @@ use crate::{
     material::Material,
 };
 
-use super::{Visible, VisibleHit};
+use super::{
+    bvh::{Bounded, BoundingBox, Primitive},
+    Visible, VisibleHit,
+};
 
 pub struct Sphere {
     center: Point<f64>,
@@ -60,3 +63,23 @@ impl Visible for Sphere {
         ))
     }
 }
+
+impl Bounded for Sphere {
+    fn bbox(&self) -> BoundingBox {
+        let center = self.center;
+        let first = Point::new(self.radius, self.radius, self.radius);
+        let second = -first;
+
+        BoundingBox::from_points(&[first + center, second + center]).unwrap()
+    }
+
+    fn surface_area(&self) -> f64 {
+        4.0 * std::f64::consts::PI * self.radius.powi(2)
+    }
+
+    fn centroid(&self) -> Point<f64> {
+        self.center
+    }
+}
+
+impl Primitive for Sphere {}

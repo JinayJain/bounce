@@ -13,10 +13,10 @@ use crate::{
     object::Tri,
 };
 
-use super::{Visible, VisibleHit, VisibleList};
+use super::{bvh::Primitive, Visible, VisibleHit, VisibleList};
 
 pub struct Object {
-    triangles: VisibleList,
+    triangles: Vec<Tri>,
 }
 
 impl Object {
@@ -33,11 +33,15 @@ impl Object {
 
         Ok(Self { triangles })
     }
-}
 
-impl Visible for Object {
-    fn bounce(&self, r: Ray, t_range: &Range<f64>) -> Option<VisibleHit> {
-        self.triangles.bounce(r, t_range)
+    pub fn to_primitives(self) -> Vec<Arc<dyn Primitive>> {
+        self.triangles
+            .into_iter()
+            .map(|tri| {
+                let tri: Arc<dyn Primitive> = Arc::new(tri);
+                tri
+            })
+            .collect()
     }
 }
 
@@ -45,13 +49,13 @@ fn triangulate(
     vertices: Vec<Point<f64>>,
     faces: Vec<Vec<usize>>,
     material: Arc<dyn Material>,
-) -> VisibleList {
+) -> Vec<Tri> {
     assert!(
         faces.iter().all(|x| x.len() == 3),
         "TODO: Handle non-triangle object faces"
     );
 
-    let mut triangles = VisibleList::new();
+    let mut triangles = Vec::new();
 
     for face in faces {
         let face: Vec<_> = face.iter().map(|x| x - 1).collect();
@@ -61,7 +65,7 @@ fn triangulate(
         let c = vertices[face[2]];
 
         let tri = Tri::new(a, b, c, Arc::clone(&material));
-        triangles.add(Box::new(tri));
+        triangles.push(tri);
     }
 
     triangles

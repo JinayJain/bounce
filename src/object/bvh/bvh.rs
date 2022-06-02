@@ -176,7 +176,7 @@ fn get_bucket(value: f64, bucket_size: f64, buckets_start: f64, num_buckets: usi
 }
 
 const NUM_BUCKETS: usize = 8;
-const COST_TRAVERSAL: f64 = 1.0 / 8.0;
+const COST_TRAVERSAL: f64 = 1.0 / 16.0;
 const MAX_PRIMS_PER_NODE: usize = 5;
 
 impl BvhNode {
@@ -186,8 +186,6 @@ impl BvhNode {
     fn build(primitives: Vec<Arc<dyn Primitive>>) -> Self {
         let full_bbox =
             full_bbox(&primitives).expect("Failed to create combined bounding box for slice");
-
-        dbg!(primitives.len());
 
         if primitives.len() == 1 {
             return BvhNode::Leaf(BvhLeaf {
@@ -210,9 +208,6 @@ impl BvhNode {
             });
         }
 
-        eprintln!("made {} buckets of size {}", NUM_BUCKETS, bucket_size);
-        eprintln!("range {:?}", &x_range);
-
         for prim in primitives.iter() {
             let centroid = prim.centroid();
 
@@ -220,10 +215,8 @@ impl BvhNode {
             assert!(centroid.x() <= x_range.end);
 
             // Epsilon makes sure the bucket_idx is within 0 <= b < NUM_BUCKETS
-            println!("{}", centroid.x());
             let bucket_idx = get_bucket(centroid.x(), bucket_size, x_range.start, NUM_BUCKETS);
             let bucket = &mut buckets[bucket_idx];
-            eprintln!("assigned to bucket {}", bucket_idx);
 
             bucket.count += 1;
 
@@ -256,8 +249,6 @@ impl BvhNode {
                 })
                 .reduce(|acc, item| acc + item);
 
-            dbg!(left_cnt, right_cnt);
-
             if left_cnt == 0 || right_cnt == 0 {
                 continue;
             }
@@ -271,7 +262,6 @@ impl BvhNode {
                     / full_bbox.surface_area();
 
             if cost < best_cost {
-                dbg!(cost, best_cost);
                 best_cost = cost;
                 best_split = Some(bucket_size * ((split_idx + 1) as f64) + x_range.start);
             }
@@ -281,14 +271,13 @@ impl BvhNode {
 
         if best_split.is_some() && (primitives.len() > MAX_PRIMS_PER_NODE || leaf_cost > best_cost)
         {
-            // println!("best split: {}", best_split);
-
             let (left_prims, right_prims): (Vec<_>, Vec<_>) = primitives
                 .into_iter()
                 .partition(|prim| prim.centroid().x() < best_split.unwrap());
 
-            // dbg!(left_prims.len());
-            // dbg!(right_prims.len());
+            println!("best split: {}", best_split.unwrap());
+            println!("{:?}", &x_range);
+            println!("{}, {}", left_prims.len(), right_prims.len());
 
             let left = Arc::new(BvhNode::build(left_prims));
             let right = Arc::new(BvhNode::build(right_prims));

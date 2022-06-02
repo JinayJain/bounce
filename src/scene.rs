@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{ops::Range, path::PathBuf, sync::Arc};
 
 use indicatif::{ProgressBar, ProgressStyle};
 
@@ -10,7 +10,7 @@ use crate::{
     material::{Dielectric, Lambertian, Material, Metal},
     object::{
         bvh::{BvhTree, Primitive},
-        InfinitePlane, Sphere, Tri, Visible, VisibleList,
+        InfinitePlane, Object, Sphere, Tri, Visible, VisibleHit, VisibleList,
     },
     sky::{Sky, Uniform},
 };
@@ -33,6 +33,7 @@ const HIT_TOLERANCE: f64 = 0.0001;
 
 pub struct Scene {
     primitives: Vec<Arc<dyn Primitive>>,
+    objects: VisibleList,
     camera: Camera,
     sky: Box<dyn Sky>,
     show_progress: bool,
@@ -42,7 +43,7 @@ type PrimArc = Arc<dyn Primitive>;
 impl Scene {
     pub fn new() -> Self {
         Self {
-            // objects: VisibleList::new(),
+            objects: VisibleList::new(),
             primitives: Vec::new(),
             camera: Camera::default(),
             sky: Box::new(Uniform::new(Color::white())),
@@ -54,18 +55,27 @@ impl Scene {
     //     self.objects.add(Box::new(object));
     // }
 
-    // pub fn sphere(&mut self, center: Point<f64>, radius: f64, material: &Arc<dyn Material>) {
-    //     self.objects
-    //         .add(Box::new(Sphere::new(center, radius, material.clone())));
-    // }
+    pub fn object(&mut self, path: impl Into<PathBuf>, material: &Arc<dyn Material>) {
+        let obj = Object::new(path, Arc::clone(material)).expect("Unable to open object file");
+        let mut prims = obj.to_primitives();
 
-    // pub fn plane(&mut self, origin: Point<f64>, normal: Vec3<f64>, material: &Arc<dyn Material>) {
-    //     self.objects.add(Box::new(InfinitePlane::new(
-    //         origin,
-    //         normal,
-    //         Arc::clone(material),
-    //     )))
-    // }
+        dbg!(self.primitives.len());
+        self.primitives.append(&mut prims);
+        dbg!(self.primitives.len());
+    }
+
+    pub fn sphere(&mut self, center: Point<f64>, radius: f64, material: &Arc<dyn Material>) {
+        let sphere: PrimArc = Arc::new(Sphere::new(center, radius, Arc::clone(material)));
+        self.primitives.push(sphere);
+    }
+
+    pub fn plane(&mut self, origin: Point<f64>, normal: Vec3<f64>, material: &Arc<dyn Material>) {
+        self.objects.add(Box::new(InfinitePlane::new(
+            origin,
+            normal,
+            Arc::clone(material),
+        )))
+    }
 
     pub fn triangle(
         &mut self,
@@ -137,7 +147,7 @@ impl Scene {
             pb.set_style(ProgressStyle::default_bar().template(
                 "[{elapsed_precise}] {wide_bar} ({percent}%) [{pos}px / {len}px ({per_sec})]",
             ));
-            pb.set_draw_delta(500);
+            pb.set_draw_delta((width * height / 100) as u64);
 
             Some(pb)
         } else {
@@ -169,12 +179,26 @@ impl Scene {
         });
     }
 
+    fn find_hit(&self, r: Ray, t_range: &Range<f64>, bvh: &BvhTree) -> Option<VisibleHit> {
+        let closest_bvh = bvh.bounce(r, t_range);
+        let closest_object = self.objects.bounce(r, t_range);
+
+        // using comparison of options (shown in test below) to take the closest, non-None hit
+        if closest_object.as_ref().and_then(|hit| Some(-hit.t))
+            > closest_bvh.as_ref().and_then(|hit| Some(-hit.t))
+        {
+            closest_object
+        } else {
+            closest_bvh
+        }
+    }
+
     fn ray_color(&self, r: Ray, depth: u32, bvh: &BvhTree) -> Color {
         if depth <= 0 {
             return Color::new(0.0, 0.0, 0.0);
         }
 
-        if let Some(hit) = bvh.bounce(r, &(HIT_TOLERANCE..f64::INFINITY)) {
+        if let Some(hit) = self.find_hit(r, &(HIT_TOLERANCE..f64::INFINITY), &bvh) {
             if let Some((scattered, attenuation)) = hit.material.scatter(r, &hit) {
                 return attenuation * self.ray_color(scattered, depth - 1, bvh);
             }
@@ -184,5 +208,17 @@ impl Scene {
 
         let unit = r.direction().unit();
         self.sky.at(unit)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn visible_hit_comparison() {
+        assert!(Some(5) > None);
+        assert!(Some(-5) > None);
+        assert!(None < Some(32));
+        assert!(None::<f64> <= None);
+        assert!(Some(23.453) > Some(-123.45));
     }
 }

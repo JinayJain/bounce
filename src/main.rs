@@ -49,7 +49,10 @@ fn main() -> io::Result<()> {
 
     make_triangles(500, &mut scene);
 
-    let look_from = Point::new(0.0, 0.0, 100.0);
+    // let teapot_mat = scene.metal_material(Color::new(1.0, 1.0, 1.0), 0.1);
+    // scene.object("files/teapot.obj", &teapot_mat);
+
+    let look_from = Point::new(0.0, 0.0, 20.0);
     let look_at = Point::new(0.0, 1.0, 0.0);
     let focus_dist = Vec3::from(look_at - look_from).len();
 
@@ -74,22 +77,7 @@ fn main() -> io::Result<()> {
 }
 
 fn make_triangles(num: usize, scene: &mut Scene) {
-    let mat = scene.diffuse_material(Color::new(0.0, 0.0, 1.0));
-
-    let a = Point::new(0.0, 0.0, 0.0);
-    let b = Point::new(1.0, 0.0, 0.0);
-    let c = Point::new(0.0, 1.0, 0.0);
-
-    let offsets = vec![
-        Point::new(0.0, -1.0, 0.0),
-        Point::new(7.0, -1.0, 0.0),
-        Point::new(8.0, -1.0, 0.0),
-        Point::new(9.0, -1.0, 0.0),
-    ];
-
-    offsets.into_iter().for_each(|offset| {
-        scene.triangle(a + offset, b + offset, c + offset, &mat);
-    });
+    let mat = scene.metal_material(Color::new(0.3, 0.3, 0.8), 0.3);
 
     let mut rng = thread_rng();
     let coord_range = -10.0..10.0;
@@ -100,6 +88,7 @@ fn make_triangles(num: usize, scene: &mut Scene) {
             rng.gen_range(coord_range.clone()),
         );
 
-        scene.triangle(a + offset, b + offset, c + offset, &mat);
+        // scene.triangle(a + offset, b + offset, c + offset, &mat);
+        scene.sphere(offset, 0.5, &mat);
     }
 }
