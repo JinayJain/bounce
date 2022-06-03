@@ -57,8 +57,19 @@ impl VisibleList {
         }
     }
 
+    pub fn from_list(objects: Vec<Box<dyn Visible>>) -> Self {
+        let mut list = Self::new();
+        list.add_all(objects);
+
+        list
+    }
+
     pub fn add(&mut self, object: Box<dyn Visible>) {
         self.objects.push(object);
+    }
+
+    pub fn add_all(&mut self, mut objects: Vec<Box<dyn Visible>>) {
+        self.objects.append(&mut objects);
     }
 }
 

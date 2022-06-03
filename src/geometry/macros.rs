@@ -5,7 +5,7 @@ macro_rules! impl_math_generic {
 
         impl<T> Add for $new
         where
-            T: Add<Output = T>,
+            T: Add<Output = T> + Copy,
         {
             type Output = Self;
 
@@ -16,7 +16,7 @@ macro_rules! impl_math_generic {
 
         impl<T> AddAssign for $new
         where
-            T: AddAssign,
+            T: AddAssign + Copy,
         {
             fn add_assign(&mut self, other: Self) {
                 self.0 += other.0;
@@ -25,7 +25,7 @@ macro_rules! impl_math_generic {
 
         impl<T> Div for $new
         where
-            T: Div<Output = T>,
+            T: Div<Output = T> + Copy,
         {
             type Output = Self;
 
@@ -56,7 +56,7 @@ macro_rules! impl_math_generic {
 
         impl<T> Mul for $new
         where
-            T: Mul<Output = T>,
+            T: Mul<Output = T> + Copy,
         {
             type Output = Self;
 
@@ -87,7 +87,7 @@ macro_rules! impl_math_generic {
 
         impl<T> Neg for $new
         where
-            T: Neg<Output = T>,
+            T: Neg<Output = T> + Copy,
         {
             type Output = Self;
 
@@ -98,7 +98,7 @@ macro_rules! impl_math_generic {
 
         impl<T> Sub for $new
         where
-            T: Sub<Output = T>,
+            T: Sub<Output = T> + Copy,
         {
             type Output = Self;
 

@@ -47,12 +47,12 @@ fn main() -> io::Result<()> {
 
     let mut scene = Scene::new();
 
-    make_triangles(120_000, &mut scene);
+    // make_triangles(120_000, &mut scene);
 
     let metal = scene.metal_material(Color::new(1.0, 1.0, 1.0), 0.3);
     let diffuse = scene.diffuse_material(Color::new(1.0, 0.0, 1.0));
     let glass = scene.dielectric_material(1.5);
-    // scene.object("files/teapot.obj", &diffuse);
+    scene.object("files/teapot.obj", &diffuse);
 
     let plane_mat = scene.diffuse_material(Color::new(0.2, 0.2, 0.01));
     // scene.plane(

@@ -4,9 +4,7 @@ use rand::{thread_rng, Rng};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vec3<T> {
-    x: T,
-    y: T,
-    z: T,
+    coords: [T; 3],
 }
 
 impl<T> Vec3<T>
@@ -14,19 +12,22 @@ where
     T: Copy,
 {
     pub fn new(x: T, y: T, z: T) -> Vec3<T> {
-        Vec3 { x, y, z }
+        Vec3 { coords: [x, y, z] }
     }
 
+    #[inline(always)]
     pub fn x(&self) -> T {
-        self.x
+        self.coords[0]
     }
 
+    #[inline(always)]
     pub fn y(&self) -> T {
-        self.y
+        self.coords[1]
     }
 
+    #[inline(always)]
     pub fn z(&self) -> T {
-        self.z
+        self.coords[2]
     }
 }
 
@@ -38,26 +39,26 @@ impl Vec3<f64> {
 
     /// Computes the squared length of a vector, equivalent to `v.dot(v)`
     pub fn len_sq(&self) -> f64 {
-        self.x * self.x + self.y * self.y + self.z * self.z
+        self.x() * self.x() + self.y() * self.y() + self.z() * self.z()
     }
 
     /// Returns the unit-length representation of the Vec3
     pub fn unit(&self) -> Self {
         let len = self.len();
-        Vec3::new(self.x / len, self.y / len, self.z / len)
+        Vec3::new(self.x() / len, self.y() / len, self.z() / len)
     }
 
     /// Computes the dot product between two vectors by multiplying their components
     pub fn dot(&self, other: Vec3<f64>) -> f64 {
-        self.x * other.x + self.y * other.y + self.z * other.z
+        self.x() * other.x() + self.y() * other.y() + self.z() * other.z()
     }
 
     /// Computes the cross product between two vectors by multiplying their components
     pub fn cross(&self, other: Vec3<f64>) -> Self {
         Vec3::new(
-            self.y * other.z - self.z * other.y,
-            self.z * other.x - self.x * other.z,
-            self.x * other.y - self.y * other.x,
+            self.y() * other.z() - self.z() * other.y(),
+            self.z() * other.x() - self.x() * other.z(),
+            self.x() * other.y() - self.y() * other.x(),
         )
     }
 
@@ -80,17 +81,17 @@ impl Vec3<f64> {
     pub fn random(min: f64, max: f64) -> Self {
         let mut rng = thread_rng();
 
-        Vec3 {
-            x: rng.gen_range(min..max),
-            y: rng.gen_range(min..max),
-            z: rng.gen_range(min..max),
-        }
+        Vec3::new(
+            rng.gen_range(min..max),
+            rng.gen_range(min..max),
+            rng.gen_range(min..max),
+        )
     }
 
     pub fn near_zero(&self) -> bool {
         const THRESHOLD: f64 = 1e-8;
 
-        (self.x.abs() < THRESHOLD) && (self.y.abs() < THRESHOLD) && (self.z.abs() < THRESHOLD)
+        (self.x().abs() < THRESHOLD) && (self.y().abs() < THRESHOLD) && (self.z().abs() < THRESHOLD)
     }
 
     /// Generate a random vector that lies in the unit-radius sphere
@@ -122,52 +123,48 @@ impl Div<Vec3<f64>> for f64 {
     type Output = Vec3<f64>;
 
     fn div(self, rhs: Vec3<f64>) -> Self::Output {
-        Vec3 {
-            x: self / rhs.x,
-            y: self / rhs.y,
-            z: self / rhs.z,
-        }
+        Vec3::new(self / rhs.x(), self / rhs.y(), self / rhs.z())
     }
 }
 
 impl<T> Add for Vec3<T>
 where
-    T: Add<Output = T>,
+    T: Add<Output = T> + Copy,
 {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
-        Vec3 {
-            x: self.x + other.x,
-            y: self.y + other.y,
-            z: self.z + other.z,
-        }
+        Vec3::new(
+            self.x() + other.x(),
+            self.y() + other.y(),
+            self.z() + other.z(),
+        )
     }
 }
 
 impl<T> AddAssign for Vec3<T>
 where
-    T: AddAssign,
+    T: AddAssign + Copy,
 {
     fn add_assign(&mut self, other: Self) {
-        self.x += other.x;
-        self.y += other.y;
-        self.z += other.z;
+        for (this, other) in self.coords.iter_mut().zip(other.coords) {
+            *this += other;
+        }
     }
 }
 
 impl<T> Sub for Vec3<T>
 where
-    T: Sub<Output = T>,
+    T: Sub<Output = T> + Copy,
 {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
-        Vec3 {
-            x: self.x - other.x,
-            y: self.y - other.y,
-            z: self.z - other.z,
-        }
+        Vec3::new(
+            self.x() - other.x(),
+            self.y() - other.y(),
+            self.z() - other.z(),
+        )
     }
 }
 
@@ -176,24 +173,24 @@ where
     T: SubAssign,
 {
     fn sub_assign(&mut self, other: Self) {
-        self.x -= other.x;
-        self.y -= other.y;
-        self.z -= other.z;
+        for (this, other) in self.coords.iter_mut().zip(other.coords) {
+            *this -= other;
+        }
     }
 }
 
 impl<T> Mul for Vec3<T>
 where
-    T: Mul<Output = T>,
+    T: Mul<Output = T> + Copy,
 {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self {
-        Vec3 {
-            x: self.x * other.x,
-            y: self.y * other.y,
-            z: self.z * other.z,
-        }
+        Vec3::new(
+            self.x() * other.x(),
+            self.y() * other.y(),
+            self.z() * other.z(),
+        )
     }
 }
 
@@ -204,11 +201,7 @@ where
     type Output = Self;
 
     fn mul(self, other: T) -> Self {
-        Vec3 {
-            x: self.x * other,
-            y: self.y * other,
-            z: self.z * other,
-        }
+        Vec3::new(self.x() * other, self.y() * other, self.z() * other)
     }
 }
 
@@ -217,24 +210,24 @@ where
     T: MulAssign,
 {
     fn mul_assign(&mut self, other: Self) {
-        self.x *= other.x;
-        self.y *= other.y;
-        self.z *= other.z;
+        for (this, other) in self.coords.iter_mut().zip(other.coords) {
+            *this *= other;
+        }
     }
 }
 
 impl<T> Div for Vec3<T>
 where
-    T: Div<Output = T>,
+    T: Div<Output = T> + Copy,
 {
     type Output = Self;
 
     fn div(self, other: Self) -> Self {
-        Vec3 {
-            x: self.x / other.x,
-            y: self.y / other.y,
-            z: self.z / other.z,
-        }
+        Vec3::new(
+            self.x() / other.x(),
+            self.y() / other.y(),
+            self.z() / other.z(),
+        )
     }
 }
 
@@ -245,11 +238,7 @@ where
     type Output = Self;
 
     fn div(self, other: T) -> Self {
-        Vec3 {
-            x: self.x / other,
-            y: self.y / other,
-            z: self.z / other,
-        }
+        Vec3::new(self.x() / other, self.y() / other, self.z() / other)
     }
 }
 
@@ -258,24 +247,20 @@ where
     T: DivAssign,
 {
     fn div_assign(&mut self, other: Self) {
-        self.x /= other.x;
-        self.y /= other.y;
-        self.z /= other.z;
+        for (this, other) in self.coords.iter_mut().zip(other.coords) {
+            *this /= other;
+        }
     }
 }
 
 impl<T> Neg for Vec3<T>
 where
-    T: Neg<Output = T>,
+    T: Neg<Output = T> + Copy,
 {
     type Output = Self;
 
     fn neg(self) -> Self {
-        Vec3 {
-            x: -self.x,
-            y: -self.y,
-            z: -self.z,
-        }
+        Vec3::new(-self.x(), -self.y(), -self.z())
     }
 }
 
@@ -287,9 +272,9 @@ mod tests {
     fn test_creation() {
         let v = Vec3::new(2.1, -5.4, 0.0);
 
-        assert_eq!(v.x, 2.1);
-        assert_eq!(v.y, -5.4);
-        assert_eq!(v.z, 0.0);
+        assert_eq!(v.x(), 2.1);
+        assert_eq!(v.y(), -5.4);
+        assert_eq!(v.z(), 0.0);
     }
 
     #[test]
@@ -299,11 +284,9 @@ mod tests {
 
         a += b;
 
-        assert_eq!(a.x, 5.0);
-        assert_eq!(a.y, 7.0);
-        assert_eq!(a.z, 9.0);
-
-        println!("{:?}", b);
+        assert_eq!(a.x(), 5.0);
+        assert_eq!(a.y(), 7.0);
+        assert_eq!(a.z(), 9.0);
     }
 
     #[test]
@@ -313,9 +296,9 @@ mod tests {
 
         a -= b;
 
-        assert_eq!(a.x, -3.0);
-        assert_eq!(a.y, -3.0);
-        assert_eq!(a.z, -3.0);
+        assert_eq!(a.x(), -3.0);
+        assert_eq!(a.y(), -3.0);
+        assert_eq!(a.z(), -3.0);
     }
 
     #[test]
@@ -325,9 +308,9 @@ mod tests {
 
         a *= b;
 
-        assert_eq!(a.x, 4.0);
-        assert_eq!(a.y, 10.0);
-        assert_eq!(a.z, 18.0);
+        assert_eq!(a.x(), 4.0);
+        assert_eq!(a.y(), 10.0);
+        assert_eq!(a.z(), 18.0);
     }
 
     #[test]
@@ -337,9 +320,9 @@ mod tests {
 
         a /= b;
 
-        assert_eq!(a.x, 1.0 / 4.0);
-        assert_eq!(a.y, 2.0 / 5.0);
-        assert_eq!(a.z, 3.0 / 6.0);
+        assert_eq!(a.x(), 1.0 / 4.0);
+        assert_eq!(a.y(), 2.0 / 5.0);
+        assert_eq!(a.z(), 3.0 / 6.0);
     }
 
     #[test]
@@ -348,9 +331,9 @@ mod tests {
 
         a = -a;
 
-        assert_eq!(a.x, -1.0);
-        assert_eq!(a.y, -2.0);
-        assert_eq!(a.z, -3.0);
+        assert_eq!(a.x(), -1.0);
+        assert_eq!(a.y(), -2.0);
+        assert_eq!(a.z(), -3.0);
     }
 
     #[test]
@@ -370,9 +353,9 @@ mod tests {
 
         let cross = a.cross(b);
 
-        assert_eq!(cross.x, -3.0);
-        assert_eq!(cross.y, 6.0);
-        assert_eq!(cross.z, -3.0);
+        assert_eq!(cross.x(), -3.0);
+        assert_eq!(cross.y(), 6.0);
+        assert_eq!(cross.z(), -3.0);
         assert_eq!(cross.dot(a), 0.0);
         assert_eq!(cross.dot(b), 0.0);
     }

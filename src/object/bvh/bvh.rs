@@ -37,6 +37,11 @@ assign this.right to build_bvh of right
 
 */
 
+// BVH Parameters
+const NUM_BUCKETS: usize = 10;
+const COST_TRAVERSAL: f64 = 1.0 / 4.0;
+const MAX_PRIMS_PER_NODE: usize = 4;
+
 pub trait Bounded {
     fn bbox(&self) -> BoundingBox;
     fn surface_area(&self) -> f64;
@@ -173,9 +178,6 @@ impl Split {
     }
 }
 
-const NUM_BUCKETS: usize = 64;
-const COST_TRAVERSAL: f64 = 1.0 / 2.0;
-const MAX_PRIMS_PER_NODE: usize = 5;
 // const COST_TRAVERSAL: f64 = f64::INFINITY;
 // const MAX_PRIMS_PER_NODE: usize = 5;
 
