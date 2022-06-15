@@ -16,7 +16,7 @@ Currently, Bounce supports:
 - Multithreaded rendering using [rayon](https://crates.io/crates/rayon)
 - OBJ file loading and rendering
 - Efficient ray-intersection queries using bounding volume hierarchies
-  - Produces a 40x speed improvement over naive implementation
+  - Converts the $O(N)$ queries into $O(\log N)$, improving speeds by over 1000x for highly complex scenes (over 1M triangles).
 
 ## Planned features
 
