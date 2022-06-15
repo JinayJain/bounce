@@ -15,6 +15,8 @@ Currently, Bounce supports:
 - Diffuse (Lambertian), glass (Schlick), and metallic material
 - Multithreaded rendering using [rayon](https://crates.io/crates/rayon)
 - OBJ file loading and rendering
+- Efficient ray-intersection queries using bounding volume hierarchies
+  - Produces a 40x speed improvement over naive implementation
 
 ## Planned features
 
@@ -23,7 +25,6 @@ In the future, I plan to add:
 - Textures
 - Additional object types beyond spheres
 - Lights
-- Rendering optimizations (such as bounding volume hierarchies)
 - Interactive 3D scene builder
 
 ### References
